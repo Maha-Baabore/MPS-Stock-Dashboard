@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MPS Stock Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1c2230;
+  --bg4: #21283a;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #58626d;
+  --accent: #00d4aa;
+  --accent2: #0099ff;
+  --accent3: #ff6b35;
+  --warn: #f0ad4e;
+  --danger: #f85149;
+  --success: #3fb950;
+  --flow: #00d4aa;
+  --gc: #0099ff;
+  --acc: #ff6b35;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font: 'IBM Plex Sans Thai', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --sidebar-w: 230px;
+  --header-h: 70px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+html { font-size: 14px; height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+}
+#app {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-brand {
+  padding: 0 18px;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(0,212,170,0.05), transparent);
+}
+.brand-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; flex-shrink: 0;
+}
+.brand-icon svg { width: 20px; height: 20px; }
+.brand-title { display: block; font-weight: 700; font-size: 1rem; color: var(--text); letter-spacing: -0.3px; }
+.brand-sub { display: block; font-size: 0.72rem; color: var(--text3); letter-spacing: 0.2px; }
+
+.sidebar-nav { padding: 12px 10px; flex: 1; }
+.nav-item {
+  width: 100%; padding: 11px 14px;
+  display: flex; align-items: center; gap: 11px;
+  background: none; border: none; color: var(--text2);
+  cursor: pointer; border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 0.9rem;
+  margin-bottom: 3px; transition: all 0.15s ease;
+  text-align: left; position: relative;
+}
+.nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active {
+  background: rgba(0,212,170,0.12);
+  color: var(--accent);
+  font-weight: 600;
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute; left: 0; top: 20%; height: 60%;
+  width: 3px; background: var(--accent); border-radius: 0 3px 3px 0;
+}
+
+.sidebar-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px;
+}
+.sync-status { display: flex; align-items: center; gap: 7px; }
+.sync-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+}
+.sync-text { font-size: 0.75rem; color: var(--text3); }
+/* .sync-btn removed — merged into header refresh button */
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  height: 100vh;
+}
+
+.top-header {
+  height: var(--header-h);
+  padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+.page-title { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
+.page-sub { font-size: 0.75rem; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+
+.header-right { display: flex; align-items: center; gap: 16px; }
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 14px;
+}
+.search-box svg { width: 15px; height: 15px; color: var(--text3); flex-shrink: 0; }
+.search-box input {
+  background: none; border: none; outline: none;
+  color: var(--text); font-family: var(--font); font-size: 0.88rem;
+  width: 200px;
+}
+.search-box input::placeholder { color: var(--text3); }
+.header-time { font-family: var(--mono); font-size: 0.8rem; color: var(--text3); }
+
+/* ===== TAB CONTENT ===== */
+.tab-content { display: none; }
+.tab-content.active {
+  display: block;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 22px 28px;
+  min-height: 0;
+}
+.tab-content.active > * { margin-bottom: 18px; }
+.tab-content.active > *:last-child { margin-bottom: 0; }
+
+/* ===== KPI CARDS ===== */
+.kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.kpi-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 14px;
+  display: flex; align-items: center; gap: 12px;
+  position: relative; overflow: visible; transition: border-color 0.2s;
+  min-height: 80px;
+}
+.kpi-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255,255,255,0.02), transparent);
+  pointer-events: none;
+}
+.kpi-card:hover { border-color: var(--accent); }
+.kpi-icon {
+  width: 38px; height: 38px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-icon svg { width: 19px; height: 19px; }
+.kpi-total .kpi-icon { background: rgba(0,212,170,0.15); color: var(--accent); }
+.kpi-low .kpi-icon { background: rgba(248,81,73,0.15); color: var(--danger); }
+.kpi-borrow .kpi-icon { background: rgba(0,153,255,0.15); color: var(--accent2); }
+.kpi-cat .kpi-icon { background: rgba(159,122,234,0.15); color: #9f7aea; }
+.kpi-value-label { font-size: 0.78rem; color: var(--text3); margin-bottom: 4px; }
+.kpi-data { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; overflow: hidden; }
+.kpi-value { font-size: 1.5rem; font-weight: 700; font-family: var(--mono); color: var(--text); display: block; line-height: 1.15; white-space: nowrap; }
+.kpi-label { font-size: 0.73rem; color: var(--text2); margin-top: 4px; display: block; line-height: 1.35; white-space: normal; word-break: break-word; }
+
+/* ===== CATEGORY TABS ===== */
+.category-tabs { display: flex; gap: 6px; }
+.cat-tab {
+  padding: 7px 18px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text2); cursor: pointer; font-family: var(--font);
+  font-size: 0.85rem; transition: all 0.15s;
+}
+.cat-tab.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+.cat-tab:hover:not(.active) { border-color: var(--text2); color: var(--text); }
+
+/* ===== TABLE CARDS ===== */
+.table-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; flex: 1;
+}
+.table-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.table-title { font-weight: 600; font-size: 0.95rem; }
+.table-actions { display: flex; gap: 10px; align-items: center; }
+.table-actions select, #borrowFilter {
+  padding: 6px 12px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text2); font-family: var(--font);
+  font-size: 0.82rem; cursor: pointer; outline: none;
+}
+.btn-export {
+  padding: 6px 14px; display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); border-radius: var(--radius-sm);
+  cursor: pointer; font-family: var(--font); font-size: 0.82rem;
+  transition: all 0.15s;
+}
+.btn-export svg { width: 14px; height: 14px; }
+.btn-export:hover { background: var(--accent); border-color: var(--accent); color: #000; }
+
+.table-wrapper { overflow-x: auto; max-height: none; flex: 1; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { position: sticky; top: 0; z-index: 2; }
+th {
+  padding: 11px 14px; text-align: left; font-weight: 600;
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text3); background: var(--bg3); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 10px 14px; font-size: 0.87rem; color: var(--text2);
+  border-bottom: 1px solid rgba(48,54,61,0.5);
+}
+tbody tr:hover td { background: rgba(255,255,255,0.02); }
+tbody tr:last-child td { border-bottom: none; }
+.loading-row td { text-align: center; color: var(--text3); padding: 24px; }
+
+/* Status Badges */
+.badge {
+  padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+  display: inline-block; white-space: nowrap;
+}
+.badge-ok { background: rgba(63,185,80,0.15); color: var(--success); }
+.badge-low { background: rgba(240,173,78,0.15); color: var(--warn); }
+.badge-out { background: rgba(248,81,73,0.15); color: var(--danger); }
+.badge-borrowed { background: rgba(0,153,255,0.15); color: var(--accent2); }
+.badge-returned { background: rgba(63,185,80,0.15); color: var(--success); }
+.badge-overdue { background: rgba(248,81,73,0.15); color: var(--danger); }
+
+/* Category dots */
+.cat-dot { display: inline-flex; align-items: center; gap: 6px; }
+.cat-dot::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.cat-flow::before { background: var(--flow); }
+.cat-gc::before { background: var(--gc); }
+.cat-acc::before { background: var(--acc); }
+
+/* ===== BORROW/RETURN FORM ===== */
+.borrow-layout { display: grid; grid-template-columns: 340px 1fr; gap: 18px; min-height: 500px; }
+.borrow-form-card, .borrow-list-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.borrow-list-card { display: flex; flex-direction: column; }
+.borrow-list-card .table-wrapper { flex: 1; }
+
+.form-title { padding: 0; }
+.form-title-tabs { display: flex; }
+.form-tab {
+  flex: 1; padding: 14px 10px; border: none; background: var(--bg3);
+  color: var(--text2); cursor: pointer; font-family: var(--font);
+  font-size: 0.88rem; font-weight: 500; border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.form-tab.active { background: var(--bg2); color: var(--text); border-bottom-color: var(--accent); }
+
+#borrowForm, #returnForm { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.inline { flex-direction: row; align-items: center; gap: 12px; }
+.form-group label { font-size: 0.8rem; color: var(--text2); font-weight: 500; }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); font-family: var(--font);
+  font-size: 0.87rem; outline: none; transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--accent);
+}
+.qty-hint { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+
+.btn-submit {
+  padding: 11px; background: var(--accent); border: none;
+  border-radius: var(--radius-sm); color: #000; font-weight: 700;
+  font-family: var(--font); font-size: 0.92rem; cursor: pointer;
+  transition: all 0.15s; margin-top: 4px;
+}
+.btn-submit:hover { background: #00f0c0; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,212,170,0.3); }
+.btn-submit.btn-return { background: var(--accent2); }
+.btn-submit.btn-return:hover { background: #33aaff; box-shadow: 0 4px 16px rgba(0,153,255,0.3); }
+.btn-cancel {
+  padding: 11px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text2); font-weight: 600;
+  font-family: var(--font); font-size: 0.92rem; cursor: pointer; margin-top: 4px;
+}
+
+.return-info {
+  background: var(--bg3); border-radius: var(--radius-sm);
+  padding: 12px; display: flex; flex-direction: column; gap: 6px;
+}
+.info-row { display: flex; gap: 8px; font-size: 0.84rem; }
+.info-row span { color: var(--text3); min-width: 70px; }
+.info-row strong { color: var(--text); }
+
+/* ===== REPORT ===== */
+.report-controls {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px;
+  display: flex; align-items: center; gap: 20px;
+}
+.report-summary { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.summary-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.summary-card.warn { border-color: rgba(248,81,73,0.4); }
+.sum-label { font-size: 0.78rem; color: var(--text3); }
+.sum-value { font-size: 1.6rem; font-weight: 700; font-family: var(--mono); color: var(--text); }
+
+.report-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.chart-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.chart-card h4 { font-size: 0.9rem; color: var(--text2); margin-bottom: 16px; }
+
+/* Bar chart */
+.bar-chart { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; }
+.bar-label { width: 160px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s ease; }
+.bar-count { width: 30px; text-align: right; color: var(--text3); font-family: var(--mono); }
+
+.low-stock-list { display: flex; flex-direction: column; gap: 6px; }
+.low-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg3); border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+}
+.low-item-name { color: var(--text); flex: 1; }
+.low-item-qty { font-family: var(--mono); font-weight: 600; }
+.qty-critical { color: var(--danger); }
+.qty-low { color: var(--warn); }
+
+/* ===== ANALYTICS ===== */
+.analytics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-content: start; }
+.analytics-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; overflow: hidden;
+}
+.analytics-card h4 { font-size: 0.9rem; color: var(--text2); margin-bottom: 16px; }
+.analytics-card.span-2 { grid-column: span 2; }
+canvas { max-width: 100%; }
+
+.h-bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.h-bar-row { display: flex; align-items: center; gap: 12px; }
+.h-bar-label { width: 180px; font-size: 0.82rem; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-bar-track { flex: 1; height: 10px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
+.h-bar-fill { height: 100%; border-radius: 5px; }
+.h-bar-val { width: 40px; text-align: right; font-family: var(--mono); font-size: 0.82rem; color: var(--text3); }
+
+/* ===== LOADING SPINNER ===== */
+.loading-spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 6px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  padding: 12px 20px; border-radius: var(--radius-sm);
+  font-size: 0.9rem; font-weight: 500; font-family: var(--font);
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 360px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--success); color: #000; }
+.toast.error { background: var(--danger); color: #fff; }
+.toast.info { background: var(--accent2); color: #fff; }
+.toast.warn { background: var(--warn); color: #000; }
+
+/* ===== CONFIG FAB ===== */
+.config-fab {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: transparent; border: 1px solid transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text3); transition: all 0.2s;
+  flex-shrink: 0;
+}
+.config-fab svg { width: 16px; height: 16px; }
+.config-fab:hover { background: var(--bg3); color: var(--accent); border-color: var(--border); transform: rotate(30deg); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+.modal-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; width: 460px;
+  max-width: 90vw;
+}
+.modal-box h3 { font-size: 1.1rem; margin-bottom: 8px; }
+.modal-desc { font-size: 0.85rem; color: var(--text3); margin-bottom: 20px; line-height: 1.5; }
+.modal-box .form-group { margin-bottom: 14px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-actions .btn-submit { flex: 1; }
+.modal-actions .btn-cancel { flex: 1; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  :root { --sidebar-w: 200px; }
+  .kpi-grid { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 900px) {
+  .borrow-layout { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
+  .analytics-card.span-2 { grid-column: span 1; }
+}
+
+/* ===== INSTRUMENTS TAB ===== */
+.inst-controls {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px;
+}
+.inst-year-tabs { display: flex; gap: 6px; }
+.inst-year-tab {
+  padding: 7px 22px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--bg3);
+  color: var(--text2); cursor: pointer; font-family: var(--font);
+  font-size: 0.85rem; font-weight: 500; transition: all 0.15s;
+}
+.inst-year-tab.active { background: var(--accent2); border-color: var(--accent2); color: #fff; font-weight: 700; }
+.inst-year-tab:hover:not(.active) { border-color: var(--text2); color: var(--text); }
+
+.inst-filter-group { display: flex; gap: 10px; align-items: center; }
+.inst-filter-group select {
+  padding: 7px 12px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text2); font-family: var(--font);
+  font-size: 0.83rem; cursor: pointer; outline: none; white-space: nowrap;
+}
+.inst-count { font-size: 0.8rem; color: var(--text3); font-family: var(--mono); }
+
+/* Expiry banner */
+.expiry-banner {
+  background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.35);
+  border-radius: var(--radius); padding: 14px 18px;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;
+}
+.expiry-banner-title { font-weight: 700; color: var(--danger); font-size: 0.88rem; width: 100%; margin-bottom: 4px; }
+.expiry-chip {
+  padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+  background: rgba(248,81,73,0.15); color: var(--danger); border: 1px solid rgba(248,81,73,0.3);
+}
+.expiry-chip.soon { background: rgba(240,173,78,0.15); color: var(--warn); border-color: rgba(240,173,78,0.3); }
+
+/* Calibration status badges */
+.badge-valid   { background: rgba(63,185,80,0.15); color: var(--success); }
+.badge-soon    { background: rgba(240,173,78,0.15); color: var(--warn); }
+.badge-expired { background: rgba(248,81,73,0.15); color: var(--danger); }
+.badge-removed { background: rgba(88,98,109,0.25); color: var(--text3); }
+
+/* Days remaining pill */
+.days-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 0.72rem; font-family: var(--mono); font-weight: 600; margin-left: 5px;
+}
+.days-ok   { background: rgba(63,185,80,0.12); color: var(--success); }
+.days-warn { background: rgba(240,173,78,0.12); color: var(--warn); }
+.days-exp  { background: rgba(248,81,73,0.12); color: var(--danger); }
+
+/* Calibration Timeline */
+.inst-timeline-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.inst-timeline-card h4 { font-size: 0.9rem; color: var(--text2); margin-bottom: 16px; }
+.cal-timeline { display: flex; flex-direction: column; gap: 6px; }
+.cal-item {
+  display: grid; grid-template-columns: 160px 1fr 130px 110px;
+  align-items: center; gap: 12px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg3);
+  transition: border-color 0.15s;
+}
+.cal-item:hover { border-color: var(--text3); }
+.cal-item.expired-row { border-color: rgba(248,81,73,0.3); background: rgba(248,81,73,0.04); }
+.cal-item.soon-row    { border-color: rgba(240,173,78,0.3); background: rgba(240,173,78,0.04); }
+.cal-name { font-size: 0.84rem; color: var(--text); font-weight: 500; }
+.cal-bar-track { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.cal-bar-fill { height: 100%; border-radius: 3px; }
+.cal-date { font-size: 0.8rem; font-family: var(--mono); color: var(--text2); text-align: right; }
+.cal-owner { font-size: 0.77rem; color: var(--text3); }
+
+/* ===== LIGHT MODE ===== */
+:root.light {
+  --bg:     #f0f4f8;
+  --bg2:    #ffffff;
+  --bg3:    #e8edf3;
+  --bg4:    #dde3ec;
+  --border: #c8d0db;
+  --text:   #1a2332;
+  --text2:  #4a5568;
+  --text3:  #8899aa;
+  --accent: #009977;
+  --accent2:#0077cc;
+  --accent3:#e85520;
+  --warn:   #b07800;
+  --danger: #c0392b;
+  --success:#2d8a3e;
+  --flow:   #009977;
+  --gc:     #0077cc;
+  --acc:    #e85520;
+  --shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+:root.light body { background: var(--bg); }
+:root.light .sidebar { box-shadow: 2px 0 8px rgba(0,0,0,0.08); }
+:root.light .top-header { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+:root.light .kpi-card::before { background: linear-gradient(135deg, rgba(0,0,0,0.01), transparent); }
+:root.light th { background: var(--bg3); }
+:root.light tbody tr:hover td { background: rgba(0,0,0,0.02); }
+:root.light .sync-dot { box-shadow: 0 0 6px var(--success); }
+:root.light .brand-icon { color: #fff; }
+:root.light .cat-tab.active { color: #fff; }
+:root.light .btn-submit { color: #fff; }
+:root.light .btn-export:hover { color: #fff; }
+:root.light .inst-year-tab.active { color: #fff; }
+:root.light .modal-box { box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+:root.light ::-webkit-scrollbar-track { background: var(--bg3); }
+:root.light ::-webkit-scrollbar-thumb { background: var(--border); }
+
+
+
+/* ===== REFRESH GROUP ===== */
+.refresh-group {
+  display: flex; align-items: center; gap: 6px;
+}
+.last-sync {
+  font-family: var(--mono); font-size: 0.72rem; color: var(--text3);
+  white-space: nowrap;
+}
+.last-sync::before { content: "sync "; }
+
+/* ===== REFRESH BUTTON ===== */
+.refresh-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text2); transition: all 0.2s;
+  flex-shrink: 0;
+}
+.refresh-btn svg { width: 15px; height: 15px; transition: transform 0.5s ease; }
+.refresh-btn:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent); }
+.refresh-btn.spinning svg { animation: spin 0.6s linear; }
+
+/* ===== THEME TOGGLE BUTTON ===== */
+.theme-toggle {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text2); transition: all 0.2s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent); }
+.theme-toggle svg { width: 16px; height: 16px; transition: transform 0.4s ease; }
+.theme-toggle:hover svg { transform: rotate(20deg); }
+
+/* ===== VERSION BADGE ===== */
+.version-badge {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--text3);
+  padding: 4px 0 2px;
+  letter-spacing: 0.5px;
+}
+
+/* Version badge */
+.version-badge {
+  display:flex; align-items:center; gap:7px; justify-content:center;
+  margin: 0 12px 8px; padding: 5px 10px;
+  border: 1px solid var(--border); border-radius: 20px;
+  background: var(--bg3);
+}
+.ver-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; box-shadow:0 0 5px var(--accent); animation:pulse 2s infinite; }
+.ver-num { font-family:var(--mono); font-size:0.7rem; color:var(--text3); letter-spacing:0.3px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 32 32" fill="none"><rect x="2" y="8" width="28" height="20" rx="2" stroke="currentColor" stroke-width="2"/><path d="M10 8V6a2 2 0 012-2h8a2 2 0 012 2v2" stroke="currentColor" stroke-width="2"/><path d="M16 14v8M12 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">MPS Stock</span>
+        <span class="brand-sub">Management System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="warehouse">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="currentColor" stroke-width="2"/></svg>
+        <span>คลังสินค้า</span>
+      </button>
+      <button class="nav-item" data-tab="borrow">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12M4 17l4 4M4 17l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>ยืม / คืน</span>
+      </button>
+      <button class="nav-item" data-tab="report">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/></svg>
+        <span>รายงาน</span>
+      </button>
+      <button class="nav-item" data-tab="instruments">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke="currentColor" stroke-width="2"/><path d="M12 6v2M12 16v2M6 12H4M20 12h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+        <span>เครื่องมือวัด</span>
+      </button>
+      <button class="nav-item" data-tab="analytics">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Analytics</span>
+      </button>
+    </nav>
+
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.3.6</span></div>
+    <div class="sidebar-footer">
+      <div class="sync-status" id="syncStatus">
+        <span class="sync-dot"></span>
+        <span class="sync-text" id="syncText">พร้อมใช้งาน</span>
+      </div>
+      <button class="config-fab" onclick="openConfig()" title="ตั้งค่า Google Sheets">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1 class="page-title" id="pageTitle">คลังสินค้า</h1>
+        <p class="page-sub" id="pageSub" style="display:none"></p>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="text" id="globalSearch" placeholder="ค้นหาสินค้า..." onkeyup="handleSearch(this.value)">
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="เปลี่ยนธีม">
+          <svg id="themeIcon" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="refresh-group">
+          <button class="refresh-btn" onclick="manualRefresh()" title="รีเฟรชข้อมูล" id="refreshBtn">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="last-sync" id="lastSync">—</span>
+        </div>
+        <div class="header-time" id="headerTime"></div>
+      </div>
+    </header>
+
+    <!-- Tab: คลังสินค้า -->
+    <div class="tab-content active" id="tab-warehouse">
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-total">
+          <div class="kpi-icon" style="background:rgba(0,212,170,0.18);color:#00d4aa"><svg viewBox="0 0 24 24" fill="none"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke="currentColor" stroke-width="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2zM8 17v2a2 2 0 002 2h4a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2"/></svg></div>
+          <div class="kpi-data">
+            <span class="kpi-value" id="kpiTotal">—</span>
+            <span class="kpi-label">รายการทั้งหมด</span>
+          </div>
+        </div>
+        <div class="kpi-card kpi-low">
+          <div class="kpi-icon" style="background:rgba(248,81,73,0.18);color:#f85149"><svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div class="kpi-data">
+            <span class="kpi-value" id="kpiLow">—</span>
+            <span class="kpi-label">สต็อกต่ำ</span>
+          </div>
+        </div>
+        <div class="kpi-card kpi-borrow">
+          <div class="kpi-icon" style="background:rgba(0,153,255,0.18);color:#0099ff"><svg viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/><polyline points="17 11 19 13 23 9" stroke="currentColor" stroke-width="2"/></svg></div>
+          <div class="kpi-data">
+            <span class="kpi-value" id="kpiBorrow">—</span>
+            <span class="kpi-label">รายการที่ยืมออก</span>
+          </div>
+        </div>
+        <div class="kpi-card kpi-cat">
+          <div class="kpi-icon" style="background:rgba(159,122,234,0.18);color:#9f7aea">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="kpi-data">
+            <span class="kpi-value" id="kpiCategories">3</span>
+            <span class="kpi-label">หมวดหมู่</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="category-tabs">
+        <button class="cat-tab active" data-cat="all">ทั้งหมด</button>
+        <button class="cat-tab" data-cat="flow">Flow Computer</button>
+        <button class="cat-tab" data-cat="gc">Online GC</button>
+        <button class="cat-tab" data-cat="acc">Accessories</button>
+      </div>
+
+      <!-- Stock Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">รายการสต็อก</span>
+          <div class="table-actions">
+            <select id="filterStatus" onchange="filterTable()">
+              <option value="all">ทุกสถานะ</option>
+              <option value="ok">พร้อมใช้</option>
+              <option value="low">ต่ำกว่าเกณฑ์</option>
+              <option value="out">หมด</option>
+            </select>
+            <button class="btn-export" onclick="exportCSV()">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Export
+            </button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table id="stockTable">
+            <thead>
+              <tr>
+                <th>รหัสสินค้า</th>
+                <th>ชื่อสินค้า</th>
+                <th>หมวดหมู่</th>
+                <th>Part No.</th>
+                <th>ยี่ห้อ</th>
+                <th>คงเหลือ</th>
+                <th>Min Stock</th>
+                <th>หน่วย</th>
+                <th>สถานะ</th>
+                <th>ที่เก็บ</th>
+              </tr>
+            </thead>
+            <tbody id="stockTableBody">
+              <tr class="loading-row"><td colspan="10"><div class="loading-spinner"></div> กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: ยืม/คืน -->
+    <div class="tab-content" id="tab-borrow">
+      <div class="borrow-layout">
+        <div class="borrow-form-card">
+          <h3 class="form-title">
+            <div class="form-title-tabs">
+              <button class="form-tab active" id="btnBorrow" onclick="switchForm('borrow')">📤 ยืมสินค้า</button>
+              <button class="form-tab" id="btnReturn" onclick="switchForm('return')">📥 คืนสินค้า</button>
+            </div>
+          </h3>
+          <div id="borrowForm">
+            <div class="form-group">
+              <label>ชื่อผู้ยืม</label>
+              <input type="text" id="borrowerName" placeholder="ระบุชื่อ-นามสกุล">
+            </div>
+            <div class="form-group">
+              <label>แผนก/ทีม</label>
+              <input type="text" id="borrowerDept" placeholder="ระบุแผนก">
+            </div>
+            <div class="form-group">
+              <label>สินค้าที่ยืม</label>
+              <select id="borrowItem" onchange="updateBorrowMax()">
+                <option value="">-- เลือกสินค้า --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>จำนวน</label>
+              <input type="number" id="borrowQty" min="1" value="1" placeholder="จำนวน">
+              <span class="qty-hint" id="qtyHint"></span>
+            </div>
+            <div class="form-group">
+              <label>วันที่ยืม</label>
+              <input type="date" id="borrowDate">
+            </div>
+            <div class="form-group">
+              <label>กำหนดคืน</label>
+              <input type="date" id="returnDueDate">
+            </div>
+            <div class="form-group">
+              <label>วัตถุประสงค์</label>
+              <textarea id="borrowPurpose" placeholder="ระบุวัตถุประสงค์การยืม" rows="2"></textarea>
+            </div>
+            <button class="btn-submit" onclick="submitBorrow()">ยืนยันการยืม</button>
+          </div>
+          <div id="returnForm" style="display:none">
+            <div class="form-group">
+              <label>รหัสการยืม</label>
+              <select id="returnBorrowId" onchange="fillReturnInfo()">
+                <option value="">-- เลือกรายการที่ยืม --</option>
+              </select>
+            </div>
+            <div class="return-info" id="returnInfo" style="display:none">
+              <div class="info-row"><span>ผู้ยืม:</span><strong id="ri-name"></strong></div>
+              <div class="info-row"><span>สินค้า:</span><strong id="ri-item"></strong></div>
+              <div class="info-row"><span>จำนวน:</span><strong id="ri-qty"></strong></div>
+              <div class="info-row"><span>วันที่ยืม:</span><strong id="ri-date"></strong></div>
+              <div class="info-row"><span>กำหนดคืน:</span><strong id="ri-due"></strong></div>
+            </div>
+            <div class="form-group">
+              <label>วันที่คืน</label>
+              <input type="date" id="actualReturnDate">
+            </div>
+            <div class="form-group">
+              <label>หมายเหตุ</label>
+              <textarea id="returnNote" placeholder="หมายเหตุการคืน (ถ้ามี)" rows="2"></textarea>
+            </div>
+            <button class="btn-submit btn-return" onclick="submitReturn()">ยืนยันการคืน</button>
+          </div>
+        </div>
+
+        <div class="borrow-list-card">
+          <div class="table-header">
+            <span class="table-title">รายการยืม-คืน</span>
+            <select id="borrowFilter" onchange="filterBorrowList()">
+              <option value="all">ทั้งหมด</option>
+              <option value="borrowed">ยืมอยู่</option>
+              <option value="returned">คืนแล้ว</option>
+              <option value="overdue">เกินกำหนด</option>
+            </select>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>รหัส</th>
+                  <th>ผู้ยืม</th>
+                  <th>สินค้า</th>
+                  <th>จำนวน</th>
+                  <th>วันยืม</th>
+                  <th>กำหนดคืน</th>
+                  <th>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="borrowTableBody">
+                <tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div> กำลังโหลด...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: รายงาน -->
+    <div class="tab-content" id="tab-report">
+      <div class="report-controls">
+        <div class="form-group inline">
+          <label>ช่วงเวลา</label>
+          <select id="reportPeriod" onchange="generateReport()">
+            <option value="7">7 วันที่ผ่านมา</option>
+            <option value="30" selected>30 วันที่ผ่านมา</option>
+            <option value="90">3 เดือน</option>
+            <option value="180">6 เดือน</option>
+            <option value="365">1 ปี</option>
+          </select>
+        </div>
+        <div class="form-group inline">
+          <label>หมวดหมู่</label>
+          <select id="reportCat" onchange="generateReport()">
+            <option value="all">ทั้งหมด</option>
+            <option value="flow">Flow Computer</option>
+            <option value="gc">Online GC</option>
+            <option value="acc">Accessories</option>
+          </select>
+        </div>
+        <button class="btn-export" onclick="exportReport()">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+          Export PDF
+        </button>
+      </div>
+
+      <div class="report-summary">
+        <div class="summary-card">
+          <span class="sum-label">ยืมทั้งหมด (ช่วงที่เลือก)</span>
+          <span class="sum-value" id="repTotalBorrow">—</span>
+        </div>
+        <div class="summary-card">
+          <span class="sum-label">คืนแล้ว</span>
+          <span class="sum-value" id="repReturned">—</span>
+        </div>
+        <div class="summary-card">
+          <span class="sum-label">ยังไม่คืน</span>
+          <span class="sum-value" id="repPending">—</span>
+        </div>
+        <div class="summary-card warn">
+          <span class="sum-label">เกินกำหนด</span>
+          <span class="sum-value" id="repOverdue">—</span>
+        </div>
+      </div>
+
+      <div class="report-charts">
+        <div class="chart-card">
+          <h4>สินค้าที่ถูกยืมบ่อยที่สุด</h4>
+          <div class="bar-chart" id="topBorrowChart"></div>
+        </div>
+        <div class="chart-card">
+          <h4>สต็อกต่ำกว่าเกณฑ์</h4>
+          <div class="low-stock-list" id="lowStockReport"></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">รายงานการเคลื่อนไหวสต็อก</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>รหัสสินค้า</th>
+                <th>ชื่อสินค้า</th>
+                <th>ประเภท</th>
+                <th>จำนวน</th>
+                <th>ผู้ดำเนินการ</th>
+                <th>หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody id="reportTableBody">
+              <tr class="loading-row"><td colspan="7">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: เครื่องมือวัด -->
+    <div class="tab-content" id="tab-instruments">
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-total">
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 6v2M12 16v2M6 12H4M20 12h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div class="kpi-data"><span class="kpi-value" id="instTotal">—</span><span class="kpi-label">เครื่องมือทั้งหมด</span></div>
+        </div>
+        <div class="kpi-card kpi-low">
+          <div class="kpi-icon" style="background:rgba(248,81,73,0.18);color:#f85149"><svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div class="kpi-data"><span class="kpi-value" id="instExpired">—</span><span class="kpi-label">หมดอายุแล้ว</span></div>
+        </div>
+        <div class="kpi-card kpi-borrow">
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div class="kpi-data"><span class="kpi-value" id="instSoon">—</span><span class="kpi-label">ใกล้หมดอายุ (90 วัน)</span></div>
+        </div>
+        <div class="kpi-card kpi-cat">
+          <div class="kpi-icon" style="background:rgba(63,185,80,0.18);color:#3fb950"><svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/></svg></div>
+          <div class="kpi-data"><span class="kpi-value" id="instValid">—</span><span class="kpi-label">ใช้ได้ปกติ</span></div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="inst-controls">
+<!-- year tabs removed: single sheet from Google Sheets -->
+        <div class="inst-filter-group">
+          <select id="instFilterOwner" onchange="renderInstruments()">
+            <option value="all">ผู้เก็บรักษาทุกคน</option>
+          </select>
+          <select id="instFilterStatus" onchange="renderInstruments()">
+            <option value="all">ทุกสถานะ</option>
+            <option value="valid">ใช้ได้ปกติ</option>
+            <option value="soon">ใกล้หมดอายุ</option>
+            <option value="expired">หมดอายุแล้ว</option>
+            <option value="removed">ยกเลิกใช้</option>
+          </select>
+          <div class="search-box" style="flex:1">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="text" id="instSearch" placeholder="ค้นหาชื่อ / รหัส / Model..." oninput="renderInstruments()">
+          </div>
+          <button class="btn-export" onclick="exportInstrumentsCSV()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
+
+      <!-- Expiry Alert Banner -->
+      <div id="expiryBanner" class="expiry-banner" style="display:none"></div>
+
+      <!-- Instruments Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">รายการเครื่องมือวัด</span>
+          <span class="inst-count" id="instCount"></span>
+        </div>
+        <div class="table-wrapper">
+          <table id="instTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>รหัส</th>
+                <th>ชื่อเครื่องมือ</th>
+                <th>ผู้เก็บรักษา</th>
+                <th>Manufacturer</th>
+                <th>Model</th>
+                <th>S/N</th>
+                <th>Range</th>
+                <th>ค่าความคลาดเคลื่อน</th>
+                <th>วันหมดอายุ</th>
+                <th>สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="instTableBody">
+              <tr class="loading-row"><td colspan="11"><div class="loading-spinner"></div> กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Calibration Timeline -->
+      <div class="inst-timeline-card">
+        <h4>ปฏิทินสอบเทียบ — เรียงตามวันหมดอายุ</h4>
+        <div id="calibrationTimeline" class="cal-timeline"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Analytics -->
+    <div class="tab-content" id="tab-analytics">
+      <div class="analytics-grid">
+        <div class="analytics-card span-2">
+          <h4>การยืมสินค้าตามเวลา (รายเดือน)</h4>
+          <canvas id="timelineChart" width="700" height="200"></canvas>
+        </div>
+        <div class="analytics-card">
+          <h4>สัดส่วนตามหมวดหมู่</h4>
+          <canvas id="categoryChart" width="300" height="250"></canvas>
+        </div>
+        <div class="analytics-card">
+          <h4>สถานะสต็อกทั้งหมด</h4>
+          <canvas id="stockStatusChart" width="300" height="250"></canvas>
+        </div>
+        <div class="analytics-card span-2">
+          <h4>Top 10 สินค้าที่เคลื่อนไหวมากที่สุด</h4>
+          <div class="h-bar-chart" id="topMovingChart"></div>
+        </div>
+        <div class="analytics-card">
+          <h4>แนวโน้มสต็อก (Flow Computer)</h4>
+          <canvas id="trendFC" width="300" height="200"></canvas>
+        </div>
+        <div class="analytics-card">
+          <h4>แนวโน้มสต็อก (Online GC)</h4>
+          <canvas id="trendGC" width="300" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Config Modal -->
+<div id="configModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3>⚙️ ตั้งค่า Google Sheets</h3>
+    <p class="modal-desc">กรอก Google Sheets ID และ Sheet Names เพื่อเชื่อมต่อข้อมูล</p>
+    <div class="form-group">
+      <label>Spreadsheet ID</label>
+      <input type="text" id="cfgSheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+    </div>
+    <div class="form-group">
+      <label>Sheet: สต็อก (ชื่อ sheet)</label>
+      <input type="text" id="cfgStockSheet" placeholder="Stock" value="Stock">
+    </div>
+    <div class="form-group">
+      <label>Sheet: ยืม-คืน (ชื่อ sheet)</label>
+      <input type="text" id="cfgBorrowSheet" placeholder="BorrowReturn" value="BorrowReturn">
+    </div>
+    <div class="form-group">
+      <label>Sheet: เครื่องมือวัด (ชื่อ sheet)</label>
+      <input type="text" id="cfgInstSheet" placeholder="Instruments" value="Instruments">
+    </div>
+    <div class="form-group" style="margin-top:4px">
+      <label style="color:var(--accent2);font-weight:600">🔗 Apps Script URL <span id="gasStatus" style="font-weight:400;font-size:0.75rem"></span></label>
+      <input type="text" id="cfgGasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      <span style="font-size:0.72rem;color:var(--text3);margin-top:3px;display:block">วาง URL จาก Google Apps Script → Deploy → Web App</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-submit" onclick="saveConfig()">บันทึก</button>
+      <button class="btn-cancel" onclick="closeConfig()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+/* ============================================================
+   MPS Stock Management System — app.js
+   Google Sheets (CSV export) → Dashboard
+   ============================================================ */
+
+// ──────────── CONFIG ────────────
+const DEFAULT_CONFIG = {
+  sheetId: '',
+  stockSheet: 'Stock',
+  borrowSheet: 'BorrowReturn',
+  instSheet: 'Instruments',
+  gasUrl: ''   // Google Apps Script Web App URL
+};
+
+let cfg = loadConfig();
+
+// ──────────── STATE ────────────
+let allStock   = [];   // raw stock data from Sheets
+let allBorrow  = [];   // raw borrow/return log from Sheets
+let allInstruments = []; // raw instruments from Sheets
+let currentCat = 'all';
+let currentTab = 'warehouse';
+
+// ──────────── INIT ────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initNavigation();
+  initDateTime();
+  setDefaultDates();
+  loadAllData();
+  if (!cfg.sheetId) {
+    setTimeout(() => {
+      showToast('กรุณาตั้งค่า Google Sheets ID ด้วยปุ่ม ⚙️ ล่างซ้าย', 'info');
+    }, 800);
+  }
+});
+
+// ──────────── CONFIG ────────────
+function loadConfig() {
+  try {
+    const s = localStorage.getItem('mps_config');
+    return s ? { ...DEFAULT_CONFIG, ...JSON.parse(s) } : { ...DEFAULT_CONFIG };
+  } catch { return { ...DEFAULT_CONFIG }; }
+}
+function saveConfig() {
+  cfg.sheetId      = document.getElementById('cfgSheetId').value.trim();
+  cfg.stockSheet   = document.getElementById('cfgStockSheet').value.trim() || 'Stock';
+  cfg.borrowSheet  = document.getElementById('cfgBorrowSheet').value.trim() || 'BorrowReturn';
+  cfg.instSheet    = document.getElementById('cfgInstSheet') ? document.getElementById('cfgInstSheet').value.trim() || 'Instruments' : 'Instruments';
+  cfg.gasUrl       = document.getElementById('cfgGasUrl') ? document.getElementById('cfgGasUrl').value.trim() : '';
+  localStorage.setItem('mps_config', JSON.stringify(cfg));
+  closeConfig();
+  showToast('บันทึกการตั้งค่าแล้ว', 'success');
+  loadAllData();
+}
+function openConfig() {
+  document.getElementById('cfgSheetId').value    = cfg.sheetId;
+  document.getElementById('cfgStockSheet').value = cfg.stockSheet;
+  document.getElementById('cfgBorrowSheet').value= cfg.borrowSheet;
+  if (document.getElementById('cfgInstSheet')) document.getElementById('cfgInstSheet').value = cfg.instSheet || 'Instruments';
+  if (document.getElementById('cfgGasUrl')) {
+    document.getElementById('cfgGasUrl').value = cfg.gasUrl || '';
+    const st = document.getElementById('gasStatus');
+    if (st) st.innerHTML = cfg.gasUrl 
+      ? '<span style="color:var(--success)">✅ เชื่อมต่อแล้ว</span>' 
+      : '<span style="color:var(--danger)">⚠️ ยังไม่ได้ตั้งค่า</span>';
+  }
+  document.getElementById('configModal').style.display = 'flex';
+}
+function closeConfig() { document.getElementById('configModal').style.display = 'none'; }
+
+// ──────────── GOOGLE SHEETS FETCH ────────────
+function gSheetCSV(sheetName) {
+  if (!cfg.sheetId) return Promise.resolve([]);
+  const url = `https://docs.google.com/spreadsheets/d/${cfg.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  const _sheetName = sheetName;
+  return fetch(url)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+    .then(text => {
+      // Guard: if response is HTML/JS (wrong sheet name or access error)
+      if (text.trim().startsWith('<!') || text.includes('function ') && text.includes('var ') && !text.includes(',')) {
+        console.warn(`Sheet "${_sheetName}" returned non-CSV content`);
+        return [];
+      }
+      return parseCSV(text);
+    })
+    .catch(err => { console.warn('Sheets fetch error:', err); return []; });
+}
+
+// Map any column name variation → standard camelCase key
+const COL_MAP = {
+  // Stock
+  'id':'id','รหัส':'id','รหัสสินค้า':'id',
+  'name':'name','ชื่อ':'name','ชื่อสินค้า':'name',
+  'category':'category','หมวดหมู่':'category','cat':'category',
+  'partno':'partNo','part_no':'partNo','part no':'partNo','partno.':'partNo','partno':'partNo',
+  'brand':'brand','ยี่ห้อ':'brand','manufacturer':'brand',
+  'qty':'qty','จำนวน':'qty','คงเหลือ':'qty','quantity':'qty',
+  'minqty':'minQty','min_qty':'minQty','min qty':'minQty','minstock':'minQty','min stock':'minQty','minimumqty':'minQty',
+  'unit':'unit','หน่วย':'unit',
+  'location':'location','ที่เก็บ':'location','loc':'location',
+  'status':'status','สถานะ':'status',
+  // BorrowReturn
+  'borrower':'borrower','ผู้ยืม':'borrower',
+  'dept':'dept','แผนก':'dept','department':'dept',
+  'itemid':'itemId','item_id':'itemId','item id':'itemId',
+  'itemname':'itemName','item_name':'itemName','item name':'itemName',
+  'borrowdate':'borrowDate','borrow_date':'borrowDate','วันยืม':'borrowDate','วันที่ยืม':'borrowDate',
+  'duedate':'dueDate','due_date':'dueDate','กำหนดคืน':'dueDate',
+  'returndate':'returnDate','return_date':'returnDate','วันคืน':'returnDate','วันที่คืน':'returnDate',
+  'purpose':'purpose','วัตถุประสงค์':'purpose',
+  'returnnote':'returnNote','return_note':'returnNote','หมายเหตุคืน':'returnNote',
+  // Instruments
+  'owner':'owner','ผู้เก็บรักษา':'owner','keeper':'owner',
+  'model':'model','รุ่น':'model',
+  'sn':'sn','s/n':'sn','serial':'sn','serialno':'sn',
+  'range':'range','ช่วง':'range',
+  'tol':'tol','tolerance':'tol','ค่าความคลาดเคลื่อน':'tol','error':'tol',
+  'freq':'freq','frequency':'freq','ความถี่':'freq','ความถี่สอบเทียบ':'freq',
+  'type':'type','ลักษณะ':'type','method':'type',
+  'expiry':'expiry','expire':'expiry','วันหมดอายุ':'expiry','หมดอายุ':'expiry',
+  'remark':'remark','หมายเหตุ':'remark','note':'remark',
+};
+
+function normaliseKey(raw) {
+  const k = raw.toLowerCase().replace(/[\s_\/]/g,'');
+  return COL_MAP[k] || COL_MAP[raw.toLowerCase().trim()] || raw;
+}
+
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split('\n').filter(l => l.trim());
+  if (!lines.length) return rows;
+
+  const rawHeaders = splitCSVLine(lines[0]).map(h => h.replace(/^"|"$/g,'').trim());
+  const headers    = rawHeaders.map(normaliseKey);
+
+  for (let i = 1; i < lines.length; i++) {
+    const vals = splitCSVLine(lines[i]).map(v => v.replace(/^"|"$/g,'').trim());
+    if (vals.every(v => !v)) continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = vals[idx] || ''; });
+    // Normalise category: FC→flow, GC→gc, AC/ACC→acc
+    if (obj.category !== undefined) {
+      const c = obj.category.toLowerCase().trim();
+      if      (c === 'fc' || c === 'flow' || c === 'flow computer') obj.category = 'flow';
+      else if (c === 'gc' || c === 'online gc' || c === 'gas chromatograph') obj.category = 'gc';
+      else if (c === 'ac' || c === 'acc' || c === 'accessories' || c === 'accessory') obj.category = 'acc';
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ──────────── LOAD ALL DATA ────────────
+async function loadAllData() {
+  setSyncStatus('loading');
+
+  // If no sheetId, use demo data
+  if (!cfg.sheetId) {
+    // No sheet configured — show demo data
+    allStock       = getDemoStock();
+    allBorrow      = getDemoBorrow();
+    allInstruments = getDemoInstruments();
+  } else {
+    const [stock, borrow, inst] = await Promise.all([
+      gSheetCSV(cfg.stockSheet),
+      gSheetCSV(cfg.borrowSheet),
+      gSheetCSV(cfg.instSheet)
+    ]);
+    // Stock: use demo only if sheet completely missing
+    allStock  = stock.length  ? stock  : getDemoStock();
+    // BorrowReturn: use real data (even empty []) — no demo fallback
+    allBorrow = borrow; 
+    // Instruments: guard against garbage response (wrong sheet name)
+    const instOk = inst.length > 0 && inst[0] &&
+                   !JSON.stringify(inst[0]).includes('Copyright') &&
+                   !JSON.stringify(inst[0]).includes('function ');
+    allInstruments = instOk ? parseInstrumentsSheet(inst) : getDemoInstruments();
+    if (!instOk && inst.length > 0) console.warn('Instruments sheet bad — using demo');
+  }
+
+  renderWarehouse();
+  renderBorrowList();
+  generateReport();
+  renderAnalytics();
+  populateBorrowSelect();
+  if (currentTab === 'instruments') renderInstruments();
+  setSyncStatus('ok');
+}
+
+function setSyncStatus(state) {
+  const dot  = document.querySelector('.sync-dot');
+  const text = document.getElementById('syncText');
+  const lastSync = document.getElementById('lastSync');
+  if (state === 'loading') {
+    dot.style.background = 'var(--warn)';
+    dot.style.boxShadow  = '0 0 6px var(--warn)';
+    if (text) text.textContent = 'กำลังโหลด...';
+  } else {
+    dot.style.background = 'var(--success)';
+    dot.style.boxShadow  = '0 0 6px var(--success)';
+    const now = new Date();
+    const t   = now.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+    if (text)     text.textContent = `ซิงค์ ${t}`;
+    if (lastSync) lastSync.textContent = t;
+  }
+}
+
+// ──────────── DEMO DATA ────────────
+
+function getDemoInstruments() {
+  // Demo data: 2569 list embedded as fallback
+  return INSTRUMENT_DATA['2569'] || [];
+}
+
+function parseInstrumentsSheet(rows) {
+  // Expected columns (case-insensitive): id/รหัส, name/ชื่อ, owner/ผู้เก็บรักษา,
+  // mfr/manufacturer, model, sn/s/n, range, tol/tolerance/ค่าความคลาดเคลื่อน,
+  // freq/ความถี่, type/ลักษณะ, expiry/วันหมดอายุ, remark/หมายเหตุ
+  if (!rows.length) return [];
+  return rows.map((r, idx) => {
+    const get = (...keys) => {
+      for (const k of keys) {
+        const found = Object.keys(r).find(rk => rk.toLowerCase().replace(/[\s_]/g,'').includes(k.toLowerCase().replace(/[\s_]/g,'')));
+        if (found && r[found]?.trim()) return r[found].trim();
+      }
+      return '';
+    };
+    return {
+      item: String(idx + 1),
+      id:     get('รหัส','id','code'),
+      name:   get('ชื่อเครื่องมือ','ชื่อ','name'),
+      owner:  get('ผู้เก็บรักษา','owner','keeper'),
+      mfr:    get('manufacturer','brand','ยี่ห้อ','mfr'),
+      model:  get('model','รุ่น'),
+      sn:     get('s/n','sn','serial'),
+      range:  get('range','ช่วง'),
+      tol:    get('ค่าความคลาดเคลื่อน','tolerance','tol','error'),
+      freq:   get('ความถี่','freq','frequency'),
+      type:   get('ลักษณะ','type','method'),
+      expiry: get('วันหมดอายุ','expiry','expire','หมดอายุ'),
+      remark: get('remark','หมายเหตุ','note'),
+      removed: get('remark','หมายเหตุ','note').toLowerCase().includes('remove') || get('remark','หมายเหตุ','note').toLowerCase().includes('ยกเลิก')
+    };
+  }).filter(r => r.id || r.name);
+}
+
+function getDemoStock() {
+  return [
+    // Flow Computer Spare Parts
+    { id:'FC-001', name:'Power Supply Module 24VDC',  category:'flow', partNo:'PS-2400-A', brand:'Emerson', qty:'5',  minQty:'2', unit:'ชิ้น', location:'A1-01', status:'ok'  },
+    { id:'FC-002', name:'Display Module 4-line LCD',   category:'flow', partNo:'DM-LCD4',  brand:'ABB',     qty:'2',  minQty:'2', unit:'ชิ้น', location:'A1-02', status:'low' },
+    { id:'FC-003', name:'Communication Card RS-485',   category:'flow', partNo:'CC-485B',  brand:'Emerson', qty:'8',  minQty:'3', unit:'ชิ้น', location:'A1-03', status:'ok'  },
+    { id:'FC-004', name:'Battery Backup 3.6V',         category:'flow', partNo:'BAT-36',   brand:'Generic', qty:'12', minQty:'5', unit:'ก้อน', location:'A1-04', status:'ok'  },
+    { id:'FC-005', name:'Keypad Membrane 16-key',      category:'flow', partNo:'KP-16M',   brand:'ABB',     qty:'1',  minQty:'2', unit:'ชิ้น', location:'A1-05', status:'low' },
+    { id:'FC-006', name:'I/O Module 4-20mA',           category:'flow', partNo:'IO-420',   brand:'Emerson', qty:'4',  minQty:'2', unit:'ชิ้น', location:'A1-06', status:'ok'  },
+    { id:'FC-007', name:'Ethernet Switch Module',       category:'flow', partNo:'ETH-SW4',  brand:'MOXA',    qty:'0',  minQty:'1', unit:'ชิ้น', location:'A1-07', status:'out' },
+    { id:'FC-008', name:'Enclosure Seal Kit',           category:'flow', partNo:'SK-IP65',  brand:'Generic', qty:'20', minQty:'10',unit:'ชุด', location:'A1-08', status:'ok'  },
+
+    // Online GC Spare Parts
+    { id:'GC-001', name:'Detector FID Filament',       category:'gc',   partNo:'FID-FIL',  brand:'Siemens', qty:'3',  minQty:'2', unit:'ชิ้น', location:'B2-01', status:'ok'  },
+    { id:'GC-002', name:'Column Packed SS 1/8"',        category:'gc',   partNo:'COL-SS18', brand:'Agilent', qty:'2',  minQty:'2', unit:'เส้น', location:'B2-02', status:'low' },
+    { id:'GC-003', name:'Sample Valve Rotor Seal',      category:'gc',   partNo:'SV-RS2',   brand:'Valco',   qty:'6',  minQty:'3', unit:'ชิ้น', location:'B2-03', status:'ok'  },
+    { id:'GC-004', name:'Carrier Gas Regulator 0-100psi', category:'gc', partNo:'REG-100', brand:'Matheson',qty:'2',  minQty:'1', unit:'ตัว', location:'B2-04', status:'ok'  },
+    { id:'GC-005', name:'Methanizer Catalyst',          category:'gc',   partNo:'META-CAT', brand:'Siemens', qty:'1',  minQty:'2', unit:'ชุด', location:'B2-05', status:'low' },
+    { id:'GC-006', name:'TCD Detector Assembly',        category:'gc',   partNo:'TCD-ASM',  brand:'Agilent', qty:'1',  minQty:'1', unit:'ชิ้น', location:'B2-06', status:'ok'  },
+    { id:'GC-007', name:'Pressure Transducer 0-200psi', category:'gc',   partNo:'PT-200',   brand:'Honeywell',qty:'3', minQty:'2', unit:'ตัว', location:'B2-07', status:'ok'  },
+    { id:'GC-008', name:'Oven Heater Cartridge 300W',   category:'gc',   partNo:'HC-300W',  brand:'Generic', qty:'4',  minQty:'2', unit:'ชิ้น', location:'B2-08', status:'ok'  },
+
+    // Accessories
+    { id:'AC-001', name:'Calibration Gas Mixture',      category:'acc',  partNo:'CAL-MIX',  brand:'Air Products',qty:'5', minQty:'3',unit:'ถัง', location:'C3-01', status:'ok'  },
+    { id:'AC-002', name:'Tubing SS 1/4" OD (เมตร)',     category:'acc',  partNo:'TUB-SS14', brand:'Swagelok', qty:'50',minQty:'20',unit:'เมตร',location:'C3-02', status:'ok'  },
+    { id:'AC-003', name:'Compression Fitting 1/4" SS',  category:'acc',  partNo:'FIT-SS14', brand:'Swagelok', qty:'30',minQty:'20',unit:'ตัว', location:'C3-03', status:'ok'  },
+    { id:'AC-004', name:'Cable Gland M20',               category:'acc',  partNo:'CG-M20',   brand:'Hummel',   qty:'15',minQty:'10',unit:'ตัว', location:'C3-04', status:'ok'  },
+    { id:'AC-005', name:'Terminal Block 10A',            category:'acc',  partNo:'TB-10A',   brand:'Phoenix',  qty:'100',minQty:'50',unit:'ตัว',location:'C3-05', status:'ok'  },
+    { id:'AC-006', name:'DIN Rail 1m',                   category:'acc',  partNo:'DR-1M',    brand:'Generic',  qty:'8',  minQty:'5', unit:'เส้น',location:'C3-06', status:'ok'  },
+    { id:'AC-007', name:'Wire Duct 40x40mm (เมตร)',     category:'acc',  partNo:'WD-4040',  brand:'Panduit',  qty:'20',minQty:'10',unit:'เมตร',location:'C3-07', status:'ok'  },
+    { id:'AC-008', name:'Cable Tie 300mm UV',            category:'acc',  partNo:'CT-300UV', brand:'Generic',  qty:'2',  minQty:'5', unit:'ถุง', location:'C3-08', status:'low' },
+    { id:'AC-009', name:'Silicone Sealant (หลอด)',      category:'acc',  partNo:'SIL-300',  brand:'Dow',      qty:'3',  minQty:'3', unit:'หลอด',location:'C3-09', status:'low' },
+    { id:'AC-010', name:'Multimeter Digital',            category:'acc',  partNo:'DMM-890',  brand:'Fluke',    qty:'3',  minQty:'2', unit:'ตัว', location:'C3-10', status:'ok'  },
+  ];
+}
+
+function getDemoBorrow() {
+  const now = new Date();
+  const d = (offset) => {
+    const dt = new Date(now); dt.setDate(dt.getDate()+offset);
+    return dt.toISOString().split('T')[0];
+  };
+  return [
+    { id:'BR-001', borrower:'สมชาย ใจดี',   dept:'MPS-A', itemId:'FC-003', itemName:'Communication Card RS-485',  qty:'1', borrowDate:d(-20), dueDate:d(10),  returnDate:'', status:'borrowed' },
+    { id:'BR-002', borrower:'สมหญิง ขยัน',  dept:'MPS-B', itemId:'GC-001', itemName:'Detector FID Filament',      qty:'1', borrowDate:d(-35), dueDate:d(-5),  returnDate:'', status:'overdue'  },
+    { id:'BR-003', borrower:'วิชัย สมบัติ', dept:'MPS-C', itemId:'AC-010', itemName:'Multimeter Digital',          qty:'1', borrowDate:d(-10), dueDate:d(5),   returnDate:'', status:'borrowed' },
+    { id:'BR-004', borrower:'นภา วงศ์ทอง',  dept:'MPS-A', itemId:'FC-001', itemName:'Power Supply Module 24VDC',  qty:'1', borrowDate:d(-40), dueDate:d(-10), returnDate:d(-2), status:'returned' },
+    { id:'BR-005', borrower:'ประเสริฐ มั่น', dept:'MPS-D', itemId:'GC-003', itemName:'Sample Valve Rotor Seal',    qty:'2', borrowDate:d(-15), dueDate:d(15),  returnDate:'', status:'borrowed' },
+    { id:'BR-006', borrower:'รุ้งนภา แสง',  dept:'MPS-B', itemId:'AC-002', itemName:'Tubing SS 1/4" OD',          qty:'5', borrowDate:d(-60), dueDate:d(-30), returnDate:d(-25), status:'returned' },
+    { id:'BR-007', borrower:'ธนา ภักดี',    dept:'MPS-C', itemId:'FC-006', itemName:'I/O Module 4-20mA',           qty:'1', borrowDate:d(-5),  dueDate:d(25),  returnDate:'', status:'borrowed' },
+    { id:'BR-008', borrower:'กิตติ ใส',     dept:'MPS-A', itemId:'GC-007', itemName:'Pressure Transducer 0-200psi',qty:'1', borrowDate:d(-50), dueDate:d(-20), returnDate:d(-18), status:'returned'},
+    { id:'BR-009', borrower:'สายฝน ดวง',   dept:'MPS-D', itemId:'AC-001', itemName:'Calibration Gas Mixture',     qty:'1', borrowDate:d(-8),  dueDate:d(22),  returnDate:'', status:'borrowed' },
+    { id:'BR-010', borrower:'อภิชาต ศรี',  dept:'MPS-B', itemId:'GC-005', itemName:'Methanizer Catalyst',         qty:'1', borrowDate:d(-70), dueDate:d(-40), returnDate:'', status:'overdue'  },
+  ];
+}
+
+// ──────────── NAVIGATION ────────────
+function initNavigation() {
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      currentTab = tab;
+      updateHeader(tab);
+      if (tab === 'analytics') renderAnalytics();
+      if (tab === 'report') generateReport();
+      if (tab === 'instruments') { updateOwnerFilter(); renderInstruments(); }
+    });
+  });
+
+  document.querySelectorAll('.cat-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCat = btn.dataset.cat;
+      renderWarehouse();
+    });
+  });
+}
+
+function updateHeader(tab) {
+  const titles = { warehouse:'คลังสินค้า', borrow:'ยืม / คืน', report:'รายงาน', analytics:'Analytics', instruments:'เครื่องมือวัด' };
+  document.getElementById('pageTitle').textContent = titles[tab] || '';
+  document.getElementById('pageSub').textContent   = '';
+}
+
+// ──────────── WAREHOUSE RENDER ────────────
+function renderWarehouse() {
+  const filtered = allStock.filter(item =>
+    currentCat === 'all' || item.category === currentCat
+  );
+  updateKPIs(filtered);
+  renderStockTable(filtered);
+}
+
+function updateKPIs(items) {
+  document.getElementById('kpiTotal').textContent = allStock.length;
+  document.getElementById('kpiLow').textContent   = allStock.filter(i => getStatus(i) === 'low' || getStatus(i) === 'out').length;
+  const activeBorrow = allBorrow.filter(b => b.status === 'borrowed' || b.status === 'overdue');
+  document.getElementById('kpiBorrow').textContent = activeBorrow.length;
+}
+
+function getStatus(item) {
+  const qty = parseInt(item.qty) || 0;
+  const min = parseInt(item.minQty) || 0;
+  if (qty === 0) return 'out';
+  if (qty <= min) return 'low';
+  return 'ok';
+}
+
+function renderStockTable(items) {
+  const tbody = document.getElementById('stockTableBody');
+  if (!items.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:24px">ไม่พบข้อมูล</td></tr>'; return; }
+  const catLabel = { flow:'Flow Computer', gc:'Online GC', acc:'Accessories' };
+  tbody.innerHTML = items.map(item => {
+    const st = getStatus(item);
+    const bdg = st === 'ok' ? 'badge-ok' : st === 'low' ? 'badge-low' : 'badge-out';
+    const stTh = st === 'ok' ? 'พร้อมใช้' : st === 'low' ? 'ต่ำกว่าเกณฑ์' : 'หมด';
+    const catClass = `cat-${item.category}`;
+    return `<tr>
+      <td><span style="font-family:var(--mono);font-size:0.82rem;color:var(--text3)">${item.id||''}</span></td>
+      <td style="color:var(--text);font-weight:500">${item.name||''}</td>
+      <td><span class="cat-dot ${catClass}">${catLabel[item.category]||item.category}</span></td>
+      <td><span style="font-family:var(--mono);font-size:0.8rem">${item.partNo||'—'}</span></td>
+      <td>${item.brand||'—'}</td>
+      <td style="font-weight:700;font-family:var(--mono);color:${st==='out'?'var(--danger)':st==='low'?'var(--warn)':'var(--text)'}">${item.qty||0}</td>
+      <td style="color:var(--text3);font-family:var(--mono)">${item.minQty||0}</td>
+      <td>${item.unit||''}</td>
+      <td><span class="badge ${bdg}">${stTh}</span></td>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:0.8rem">${item.location||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const status = document.getElementById('filterStatus').value;
+  const filtered = allStock.filter(item => {
+    const catOk = currentCat === 'all' || item.category === currentCat;
+    const stOk  = status === 'all' || getStatus(item) === status;
+    return catOk && stOk;
+  });
+  renderStockTable(filtered);
+}
+
+function handleSearch(q) {
+  const query = q.toLowerCase();
+  const filtered = allStock.filter(item => {
+    const catOk = currentCat === 'all' || item.category === currentCat;
+    const match  = (item.name||'').toLowerCase().includes(query) ||
+                   (item.id||'').toLowerCase().includes(query) ||
+                   (item.partNo||'').toLowerCase().includes(query) ||
+                   (item.brand||'').toLowerCase().includes(query);
+    return catOk && match;
+  });
+  renderStockTable(filtered);
+}
+
+// ──────────── BORROW/RETURN ────────────
+function populateBorrowSelect() {
+  const sel = document.getElementById('borrowItem');
+  sel.innerHTML = '<option value="">-- เลือกสินค้า --</option>' +
+    allStock.filter(i => parseInt(i.qty) > 0).map(i =>
+      `<option value="${i.id}" data-qty="${i.qty}">${i.id} — ${i.name} (คงเหลือ: ${i.qty} ${i.unit})</option>`
+    ).join('');
+
+  const retSel = document.getElementById('returnBorrowId');
+  const active = allBorrow.filter(b => b.status === 'borrowed' || b.status === 'overdue');
+  retSel.innerHTML = '<option value="">-- เลือกรายการที่ยืม --</option>' +
+    active.map(b => `<option value="${b.id}">${b.id} — ${b.borrower} / ${b.itemName}</option>`).join('');
+}
+
+function updateBorrowMax() {
+  const sel = document.getElementById('borrowItem');
+  const opt = sel.options[sel.selectedIndex];
+  const qty = opt ? opt.dataset.qty : '';
+  document.getElementById('qtyHint').textContent = qty ? `คงเหลือในสต็อก: ${qty}` : '';
+  document.getElementById('borrowQty').max = qty || 999;
+}
+
+function switchForm(type) {
+  if (type === 'borrow') {
+    document.getElementById('borrowForm').style.display = 'flex';
+    document.getElementById('returnForm').style.display = 'none';
+    document.getElementById('btnBorrow').classList.add('active');
+    document.getElementById('btnReturn').classList.remove('active');
+  } else {
+    document.getElementById('borrowForm').style.display = 'none';
+    document.getElementById('returnForm').style.display = 'flex';
+    document.getElementById('btnBorrow').classList.remove('active');
+    document.getElementById('btnReturn').classList.add('active');
+  }
+}
+
+function fillReturnInfo() {
+  const id  = document.getElementById('returnBorrowId').value;
+  const rec = allBorrow.find(b => b.id === id);
+  const box = document.getElementById('returnInfo');
+  if (!rec) { box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  document.getElementById('ri-name').textContent = rec.borrower;
+  document.getElementById('ri-item').textContent = rec.itemName;
+  document.getElementById('ri-qty').textContent  = rec.qty;
+  document.getElementById('ri-date').textContent = rec.borrowDate;
+  document.getElementById('ri-due').textContent  = rec.dueDate;
+}
+
+// ──────────── GOOGLE APPS SCRIPT WRITE ────────────
+// ใช้ GET + URL params เพราะ no-cors POST ไม่สามารถส่ง body ได้
+async function gasWrite(action, payload) {
+  if (!cfg.gasUrl) return false;
+  try {
+    const data = { action, sheetId: cfg.sheetId, borrowSheet: cfg.borrowSheet, ...payload };
+    const params = new URLSearchParams(Object.entries(data).map(([k,v]) => [k, String(v)]));
+    const url = cfg.gasUrl + '?' + params.toString();
+    await fetch(url, { method: 'GET', mode: 'no-cors' });
+    return true;
+  } catch(e) {
+    console.error('GAS write error:', e);
+    return false;
+  }
+}
+
+async function submitBorrow() {
+  const name = document.getElementById('borrowerName').value.trim();
+  const dept = document.getElementById('borrowerDept').value.trim();
+  const item = document.getElementById('borrowItem').value;
+  const qty  = parseInt(document.getElementById('borrowQty').value) || 0;
+  const date = document.getElementById('borrowDate').value;
+  const due  = document.getElementById('returnDueDate').value;
+  const purp = document.getElementById('borrowPurpose').value.trim();
+
+  if (!name || !item || !qty || !date || !due) {
+    showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warn'); return;
+  }
+  const stockItem = allStock.find(i => i.id === item);
+  if (!stockItem || parseInt(stockItem.qty) < qty) {
+    showToast('จำนวนที่ยืมมากกว่าสต็อกที่มี', 'error'); return;
+  }
+
+  const newId = 'BR-' + String(Date.now()).slice(-6);
+  const record = { id:newId, borrower:name, dept, itemId:item,
+    itemName:stockItem.name, qty:String(qty),
+    borrowDate:date, dueDate:due, returnDate:'', status:'borrowed', purpose:purp };
+
+  // Optimistic UI update
+  stockItem.qty = String(parseInt(stockItem.qty) - qty);
+  allBorrow.unshift(record);
+  renderWarehouse(); renderBorrowList(); populateBorrowSelect();
+  ['borrowerName','borrowerDept','borrowQty','borrowPurpose'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('borrowItem').value = '';
+  document.getElementById('qtyHint').textContent = '';
+
+  // Write to Google Sheets via Apps Script
+  if (cfg.gasUrl) {
+    showToast('⏳ กำลังบันทึกลง Google Sheets...', 'info');
+    const ok = await gasWrite('addBorrow', record);
+    if (ok) showToast(`✅ ยืม "${stockItem.name}" จำนวน ${qty} ${stockItem.unit} — บันทึกแล้ว`, 'success');
+    else    showToast(`⚠️ ยืมสำเร็จ แต่บันทึก Sheets ไม่ได้ (ตรวจสอบ Apps Script URL)`, 'warn');
+  } else {
+    showToast(`⚠️ ยืมสำเร็จ (local only) — กด ⚙️ ใส่ Apps Script URL เพื่อบันทึกลง Sheets`, 'warn');
+  }
+}
+
+async function submitReturn() {
+  const id   = document.getElementById('returnBorrowId').value;
+  const date = document.getElementById('actualReturnDate').value;
+  const note = document.getElementById('returnNote').value.trim();
+  if (!id || !date) { showToast('กรุณาเลือกรายการและวันที่คืน', 'warn'); return; }
+
+  const rec = allBorrow.find(b => b.id === id);
+  if (!rec) return;
+  rec.status = 'returned'; rec.returnDate = date; rec.returnNote = note;
+
+  // Return to stock
+  const stockItem = allStock.find(i => i.id === rec.itemId);
+  if (stockItem) stockItem.qty = String(parseInt(stockItem.qty) + parseInt(rec.qty));
+
+  // Optimistic UI
+  renderWarehouse(); renderBorrowList(); populateBorrowSelect();
+  document.getElementById('returnBorrowId').value = '';
+  document.getElementById('returnInfo').style.display = 'none';
+
+  // Write to Google Sheets via Apps Script
+  if (cfg.gasUrl) {
+    showToast('⏳ กำลังบันทึกลง Google Sheets...', 'info');
+    const ok = await gasWrite('updateReturn', { id, returnDate: date, note });
+    if (ok) showToast(`✅ คืน "${rec.itemName}" — บันทึกแล้ว`, 'success');
+    else    showToast(`⚠️ คืนสำเร็จ แต่บันทึก Sheets ไม่ได้`, 'warn');
+  } else {
+    showToast(`⚠️ คืนสำเร็จ (local only) — กด ⚙️ ใส่ Apps Script URL เพื่อบันทึกลง Sheets`, 'warn');
+  }
+}
+
+function renderBorrowList() {
+  const filter = document.getElementById('borrowFilter').value;
+  const rows = allBorrow.filter(b => filter === 'all' || b.status === filter);
+  const tbody = document.getElementById('borrowTableBody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">ไม่พบรายการ</td></tr>'; return; }
+  tbody.innerHTML = rows.map(b => {
+    const cls = { borrowed:'badge-borrowed', returned:'badge-returned', overdue:'badge-overdue' }[b.status] || '';
+    const stTh = { borrowed:'กำลังยืม', returned:'คืนแล้ว', overdue:'เกินกำหนด' }[b.status] || b.status;
+    return `<tr>
+      <td><span style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${b.id}</span></td>
+      <td style="color:var(--text)">${b.borrower}<br><span style="font-size:0.75rem;color:var(--text3)">${b.dept}</span></td>
+      <td>${b.itemName}</td>
+      <td style="font-family:var(--mono)">${b.qty}</td>
+      <td style="font-family:var(--mono);font-size:0.82rem">${b.borrowDate}</td>
+      <td style="font-family:var(--mono);font-size:0.82rem;color:${b.status==='overdue'?'var(--danger)':'var(--text2)'}">${b.dueDate}</td>
+      <td><span class="badge ${cls}">${stTh}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterBorrowList() { renderBorrowList(); }
+
+// ──────────── REPORT ────────────
+function generateReport() {
+  const days = parseInt(document.getElementById('reportPeriod').value) || 30;
+  const cat  = document.getElementById('reportCat').value;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+
+  const filtered = allBorrow.filter(b => {
+    const d = new Date(b.borrowDate);
+    const catOk = cat === 'all' || allStock.find(i => i.id === b.itemId)?.category === cat;
+    return d >= cutoff && catOk;
+  });
+
+  document.getElementById('repTotalBorrow').textContent = filtered.length;
+  document.getElementById('repReturned').textContent    = filtered.filter(b => b.status === 'returned').length;
+  document.getElementById('repPending').textContent     = filtered.filter(b => b.status === 'borrowed').length;
+  document.getElementById('repOverdue').textContent     = filtered.filter(b => b.status === 'overdue').length;
+
+  // Top borrowed items
+  const counts = {};
+  filtered.forEach(b => { counts[b.itemName] = (counts[b.itemName]||0) + parseInt(b.qty||1); });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxC = top[0]?.[1] || 1;
+  document.getElementById('topBorrowChart').innerHTML = top.map(([name,cnt]) => `
+    <div class="bar-row">
+      <span class="bar-label" title="${name}">${name}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${cnt/maxC*100}%"></div></div>
+      <span class="bar-count">${cnt}</span>
+    </div>`).join('') || '<p style="color:var(--text3);font-size:0.85rem">ไม่มีข้อมูลในช่วงนี้</p>';
+
+  // Low stock
+  const low = allStock.filter(i => getStatus(i) !== 'ok');
+  document.getElementById('lowStockReport').innerHTML = low.map(i => {
+    const st = getStatus(i);
+    const cls = st === 'out' ? 'qty-critical' : 'qty-low';
+    return `<div class="low-item">
+      <span class="low-item-name">${i.name}</span>
+      <span class="low-item-qty ${cls}">${i.qty} / ${i.minQty}</span>
+    </div>`;
+  }).join('') || '<p style="color:var(--success);font-size:0.85rem;padding:8px">✓ สต็อกทั้งหมดอยู่ในเกณฑ์ปกติ</p>';
+
+  // Movement log
+  const logRows = filtered.map(b => `
+    <tr>
+      <td style="font-family:var(--mono);font-size:0.8rem">${b.borrowDate}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${b.itemId}</td>
+      <td>${b.itemName}</td>
+      <td><span class="badge ${b.status==='returned'?'badge-returned':'badge-borrowed'}">${b.status==='returned'?'คืน':'ยืม'}</span></td>
+      <td style="font-family:var(--mono)">${b.qty}</td>
+      <td>${b.borrower}</td>
+      <td style="color:var(--text3)">${b.dept}</td>
+    </tr>`).join('');
+  document.getElementById('reportTableBody').innerHTML = logRows || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>';
+}
+
+// ──────────── ANALYTICS (Canvas Charts) ────────────
+function renderAnalytics() {
+  drawTimelineChart();
+  drawCategoryChart();
+  drawStockStatusChart();
+  drawTopMovingChart();
+  drawTrendChart('trendFC', 'flow', '#00d4aa');
+  drawTrendChart('trendGC', 'gc', '#0099ff');
+}
+
+function drawTimelineChart() {
+  const canvas = document.getElementById('timelineChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 40 || 700;
+  const H = 200;
+  canvas.width = W; canvas.height = H;
+
+  // Group borrows by month (last 6 months)
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth() - i);
+    months.push({ label: d.toLocaleDateString('th-TH', {month:'short',year:'2-digit'}), key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` });
+  }
+  const data = months.map(m => allBorrow.filter(b => b.borrowDate?.startsWith(m.key)).length);
+  const maxV = Math.max(...data, 1);
+
+  const pad = { l:40, r:20, t:20, b:40 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const step = cW / (months.length - 1);
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle = '#30363d'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (cH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+  }
+
+  // Area fill
+  const pts = data.map((v,i) => ({ x: pad.l + i*step, y: pad.t + cH - (v/maxV)*cH }));
+  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grad.addColorStop(0, 'rgba(0,212,170,0.25)');
+  grad.addColorStop(1, 'rgba(0,212,170,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, H - pad.b);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, H - pad.b);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath(); ctx.strokeStyle = '#00d4aa'; ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  pts.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y));
+  ctx.stroke();
+
+  // Dots + labels
+  pts.forEach((p,i) => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#00d4aa'; ctx.fill();
+    ctx.fillStyle = '#8b949e'; ctx.font = '11px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
+    ctx.fillText(months[i].label, p.x, H - pad.b + 16);
+    if (data[i] > 0) {
+      ctx.fillStyle = '#e6edf3';
+      ctx.fillText(data[i], p.x, p.y - 8);
+    }
+  });
+}
+
+function drawCategoryChart() {
+  const canvas = document.getElementById('categoryChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = 280; canvas.height = 220;
+
+  const counts = { flow: 0, gc: 0, acc: 0 };
+  allStock.forEach(i => { if (counts[i.category] !== undefined) counts[i.category]++; });
+  const data = [counts.flow, counts.gc, counts.acc];
+  const colors = ['#00d4aa','#0099ff','#ff6b35'];
+  const labels = ['Flow Computer','Online GC','Accessories'];
+  const total = data.reduce((a,b) => a+b, 0) || 1;
+
+  const cx = 110, cy = 105, r = 80;
+  let startAngle = -Math.PI / 2;
+  ctx.clearRect(0,0,280,220);
+
+  data.forEach((v,i) => {
+    const angle = (v/total) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + angle);
+    ctx.fillStyle = colors[i]; ctx.fill();
+    ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 2; ctx.stroke();
+    startAngle += angle;
+  });
+  // Center hole
+  ctx.beginPath(); ctx.arc(cx,cy,46,0,Math.PI*2);
+  ctx.fillStyle = '#161b22'; ctx.fill();
+  ctx.fillStyle = '#e6edf3'; ctx.font = 'bold 18px IBM Plex Mono'; ctx.textAlign = 'center';
+  ctx.fillText(total, cx, cy+4);
+  ctx.fillStyle = '#8b949e'; ctx.font = '10px IBM Plex Sans Thai'; ctx.fillText('รายการ',cx,cy+18);
+
+  // Legend
+  data.forEach((v,i) => {
+    const lx = 200, ly = 50 + i*40;
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(lx, ly, 12, 12);
+    ctx.fillStyle = '#8b949e'; ctx.font = '10px IBM Plex Sans Thai'; ctx.textAlign = 'left';
+    ctx.fillText(labels[i], lx+16, ly+10);
+    ctx.fillStyle = '#e6edf3'; ctx.font = 'bold 12px IBM Plex Mono';
+    ctx.fillText(v, lx+16, ly+24);
+  });
+}
+
+function drawStockStatusChart() {
+  const canvas = document.getElementById('stockStatusChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = 280; canvas.height = 220;
+
+  const ok  = allStock.filter(i => getStatus(i) === 'ok').length;
+  const low = allStock.filter(i => getStatus(i) === 'low').length;
+  const out = allStock.filter(i => getStatus(i) === 'out').length;
+  const data = [ok, low, out];
+  const colors = ['#3fb950','#f0ad4e','#f85149'];
+  const labels = ['พร้อมใช้','ต่ำกว่าเกณฑ์','หมด'];
+  const total = data.reduce((a,b)=>a+b,0) || 1;
+
+  const cx = 110, cy = 105, r = 80;
+  let sa = -Math.PI/2;
+  ctx.clearRect(0,0,280,220);
+  data.forEach((v,i) => {
+    if (!v) return;
+    const angle = (v/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,sa,sa+angle);
+    ctx.fillStyle = colors[i]; ctx.fill();
+    ctx.strokeStyle='#0d1117'; ctx.lineWidth=2; ctx.stroke();
+    sa += angle;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,46,0,Math.PI*2);
+  ctx.fillStyle='#161b22'; ctx.fill();
+  ctx.fillStyle='#e6edf3'; ctx.font='bold 18px IBM Plex Mono'; ctx.textAlign='center';
+  ctx.fillText(total, cx, cy+4);
+  ctx.fillStyle='#8b949e'; ctx.font='10px IBM Plex Sans Thai'; ctx.fillText('รายการ',cx,cy+18);
+
+  data.forEach((v,i) => {
+    const lx=200, ly=40+i*44;
+    ctx.fillStyle=colors[i]; ctx.fillRect(lx,ly,12,12);
+    ctx.fillStyle='#8b949e'; ctx.font='10px IBM Plex Sans Thai'; ctx.textAlign='left';
+    ctx.fillText(labels[i],lx+16,ly+10);
+    ctx.fillStyle='#e6edf3'; ctx.font='bold 12px IBM Plex Mono';
+    ctx.fillText(v,lx+16,ly+24);
+  });
+}
+
+function drawTopMovingChart() {
+  const container = document.getElementById('topMovingChart');
+  if (!container) return;
+  const counts = {};
+  allBorrow.forEach(b => { counts[b.itemName] = (counts[b.itemName]||0) + parseInt(b.qty||1); });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxV = top[0]?.[1] || 1;
+  const colors = ['#00d4aa','#0099ff','#ff6b35','#3fb950','#f0ad4e','#f85149','#9f7aea','#ed64a6','#38b2ac','#ed8936'];
+  container.innerHTML = top.map(([name,v],i) => `
+    <div class="h-bar-row">
+      <span class="h-bar-label" title="${name}">${i+1}. ${name}</span>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:${v/maxV*100}%;background:${colors[i]}"></div></div>
+      <span class="h-bar-val">${v}</span>
+    </div>`).join('');
+}
+
+function drawTrendChart(canvasId, cat, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 40 || 300;
+  const H = 160;
+  canvas.width = W; canvas.height = H;
+
+  // Simulate stock trend for last 6 months based on borrow data
+  const catItems = allStock.filter(i => i.category === cat);
+  const totalNow = catItems.reduce((a,i) => a+parseInt(i.qty||0),0);
+  const months = 6;
+  const pts = [];
+  for (let i = months; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth()-i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const borrowed = allBorrow.filter(b => b.borrowDate?.startsWith(key) && catItems.some(ci => ci.id===b.itemId))
+                               .reduce((a,b) => a+parseInt(b.qty||0),0);
+    pts.push(totalNow + borrowed * (i+1) * 0.3 | 0);
+  }
+  pts[months] = totalNow;
+
+  const maxV = Math.max(...pts, 1);
+  const pad = {l:36,r:10,t:16,b:30};
+  const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+
+  ctx.strokeStyle='#30363d'; ctx.lineWidth=1;
+  for (let i=0;i<=3;i++) {
+    const y=pad.t+(cH/3)*i;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle='#58626d'; ctx.font='9px IBM Plex Mono'; ctx.textAlign='right';
+    ctx.fillText(Math.round(maxV*(3-i)/3), pad.l-4, y+3);
+  }
+
+  const coords = pts.map((v,i)=>({ x:pad.l+i*(cW/(months)), y:pad.t+cH-(v/maxV)*cH }));
+  const grad = ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0, color+'40'); grad.addColorStop(1, color+'05');
+  ctx.beginPath(); ctx.moveTo(coords[0].x,H-pad.b);
+  coords.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(coords[coords.length-1].x,H-pad.b);
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+  ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineJoin='round';
+  coords.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+  ctx.stroke();
+
+  coords.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fillStyle=color; ctx.fill(); });
+}
+
+// ──────────── EXPORT ────────────
+function exportCSV() {
+  const headers = ['รหัสสินค้า','ชื่อสินค้า','หมวดหมู่','Part No.','ยี่ห้อ','คงเหลือ','Min Stock','หน่วย','สถานะ','ที่เก็บ'];
+  const catLabel = { flow:'Flow Computer', gc:'Online GC', acc:'Accessories' };
+  const stTh = { ok:'พร้อมใช้', low:'ต่ำกว่าเกณฑ์', out:'หมด' };
+  const rows = allStock.map(i => [i.id,i.name,catLabel[i.category]||i.category,i.partNo,i.brand,i.qty,i.minQty,i.unit,stTh[getStatus(i)],i.location].join(','));
+  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `MPS_Stock_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  showToast('Export CSV สำเร็จ', 'success');
+}
+
+function exportReport() { showToast('กำลังเตรียมรายงาน PDF...', 'info'); setTimeout(()=>{ window.print(); },300); }
+
+// ──────────── DATETIME ────────────
+function initDateTime() {
+  const el = document.getElementById('headerTime');
+  const update = () => {
+    const now = new Date();
+    el.textContent = now.toLocaleDateString('th-TH',{weekday:'short',year:'numeric',month:'short',day:'numeric'}) + ' ' + now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  };
+  update(); setInterval(update, 30000);
+}
+
+function setDefaultDates() {
+  const today = new Date().toISOString().split('T')[0];
+  const due   = new Date(); due.setDate(due.getDate()+7);
+  document.getElementById('borrowDate').value      = today;
+  document.getElementById('returnDueDate').value   = due.toISOString().split('T')[0];
+  document.getElementById('actualReturnDate').value= today;
+}
+
+// ──────────── TOAST ────────────
+function showToast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => { el.classList.remove('show'); }, 3500);
+}
+
+// Auto-sync every 5 minutes
+setInterval(loadAllData, 5 * 60 * 1000);
+
+/* ============================================================
+   INSTRUMENTS MODULE — เครื่องมือวัด
+   ============================================================ */
+
+// Instruments data — only current year (2569)
+const INSTRUMENT_DATA = {
+  '2568_REMOVED': [
+    {item:'1', id:'ORI001', name:'Straight Edge',               owner:'Pongtep P.',   mfr:'Starrett',       model:'380',           sn:'-',                  range:'0.0000 mm.',    tol:'+/- 0.006 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'17-Feb-2025'},
+    {item:'2', id:'ORI003', name:'Turbular Inside Micrometer',  owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'137-212',       sn:'3005573',            range:'2-6.5 inch',    tol:'+/- 0.0012 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
+    {item:'3', id:'ORI005', name:'Digimatic Caliper',           owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'500-197-20',    sn:'8103989',            range:'0-200 mm',      tol:'+/- 0.014 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:''},
+    {item:'3', id:'ORI007', name:'Digimatic Inside Micrometer', owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'339-293',       sn:'75231916',           range:'8-25 inch',     tol:'+/- 0.0005 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
+    {item:'4', id:'ORI008', name:'Infrared Thermometer',        owner:'Pongtep P.',   mfr:'Fluke',          model:'62 mini',       sn:'91986702',           range:'0-140 °F',      tol:'+/- 30 °F',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Fahrenheit',                        expiry:'17-Feb-2025'},
+    {item:'5', id:'DPS002', name:'Multi-Mode Pulse Simulator',  owner:'Pongtep P.',   mfr:'ST',             model:'ST502i',        sn:'5325-502i',          range:'10-10000Hz',    tol:'+/- 0.001%',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'12-Feb-2025'},
+    {item:'6', id:'DMM001', name:'True RMS Multimeter',         owner:'Pongtep P.',   mfr:'Fluke',          model:'179',           sn:'11170529',           range:'0-1000v,0-50MΩ,0-10A', tol:'+/- 3v,0.7MΩ,0.12A',      freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'12-Feb-2025'},
+    {item:'7', id:'DRB001', name:'Decade Resistance Box',       owner:'Pongtep P.',   mfr:'Time Electronic',model:'1067',          sn:'1496E10',            range:'0-11kΩ',        tol:'+/- 0.5% of reading, +/- 5 mΩ',    freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'80334',                                        expiry:'30-Apr-2025'},
+    {item:'8', id:'DMM004', name:'Pressure Calibrator',         owner:'Chawadol D.',  mfr:'Martel Electronic',model:'321A',        sn:'1617018',            range:'0-3,000 Psi',   tol:'+/- 1.0 Psi',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
+    {item:'9', id:'STM001', name:'Steel Tape 5M',               owner:'Chawadol D.',  mfr:'Stanley',        model:'30-496',        sn:'0-72438-58',         range:'0-5,000 mm',    tol:'+/- 2.5 mm',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'10-Feb-2025'},
+    {item:'10',id:'STM002', name:'Textile Tape 50M',            owner:'Chawadol D.',  mfr:'Stanley',        model:'34-263',        sn:'0-0397-58',          range:'0-50,000 mm',   tol:'+/- 2.4 mm',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'10-Feb-2025'},
+    {item:'11',id:'ORI010', name:'Bevel Protractor',            owner:'Pongtep P.',   mfr:'Insize',         model:'80 x 120 mm.',  sn:'1505130108',         range:'0-180 °',       tol:'+/- 1.2 °',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'10-Feb-2025'},
+    {item:'12',id:'ORI012', name:'Feeler Gauge',                owner:'Pongtep P.',   mfr:'Mituwa',         model:'No.66',         sn:'5060/06124',         range:'0.001-0.025 inch',tol:'+/- 0.00064 inch.',               freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'1 ชุด มี 26 ชิ้น',                            expiry:'17-Feb-2025'},
+    {item:'13',id:'ORI013', name:'Surface Roughness',           owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'SJ-210',        sn:'500651703',          range:'0-3.2 um.',     tol:'+/-0.030 um',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch, Cert ตัว Specimen ด้วย',    expiry:'11-Mar-2025'},
+    {item:'14',id:'ORI014', name:'Straight Edge',               owner:'Pongtep P.',   mfr:'RSK',            model:'-',             sn:'8032',               range:'0.0000 mm.',    tol:'+/- 0.006 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'Sep-2025'},
+    {item:'17',id:'ORI015', name:'Bevel Protractor',            owner:'Pongtep P.',   mfr:'Kennedy',        model:'KEN-518-345',   sn:'-',                  range:'0-180 °',       tol:'+/- 1.2 °',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'remove 2023',                                  expiry:'', removed:true},
+    {item:'15',id:'TWI004', name:'Digital Torque Wrench',       owner:'Chawadol D.',  mfr:'eclatorq',       model:'WS3-085CN',     sn:'WS3-085-18000132',   range:'0-62 ft-lb',    tol:'+/- 3 ft-lb',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย ft-lb',                            expiry:'09-Jul-2025'},
+    {item:'16',id:'TWI005', name:'Digital Torque Wrench',       owner:'Chawadol D.',  mfr:'eclatorq',       model:'WS3-060CN',     sn:'WS3-060-16000150',   range:'0-44 ft-lb',    tol:'+/- 3 ft-lb',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย ft-lb',                            expiry:'12-Feb-2025'},
+    {item:'17',id:'TWI006', name:'Torque Wrench',               owner:'Satawat T.',   mfr:'SATA',           model:'96311',         sn:'420031383',          range:'0-75 ft-lb',    tol:'+/- 3 ft-lb',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย ft-lb',                            expiry:'09-Jul-2025'},
+    {item:'18',id:'DMM008', name:'Process Meter',               owner:'Pongtep P.',   mfr:'Fluke',          model:'787B',          sn:'42620026',           range:'0-1000v,0-40MΩ,0-10A',tol:'+/-2v,930kΩ,0.004A',        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'10-Feb-2025'},
+    {item:'19',id:'DMM009', name:'True RMS Multimeter',         owner:'Satawat T.',   mfr:'Chauvin Arnoux', model:'C.A 5275',      sn:'0280229H171200002',  range:'0-1000v,0-50MΩ,0-10A',tol:'+/- 3v,0.7MΩ,0.12A',      freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'09-Jul-2025'},
+    {item:'20',id:'ORI016', name:'Bevel Protractor',            owner:'Pongtep P.',   mfr:'Moore & Wright', model:'500-01',        sn:'530573',             range:'0-180 °',       tol:'+/- 1.2 °',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
+    {item:'21',id:'DMM010', name:'ADM Flow Meter',              owner:'Satawat T.',   mfr:'Agilent',        model:'G6691A',        sn:'MY20441234',         range:'0-100 ml/min',  tol:'+/- 5% of reading',                 freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'09-Feb-2025'},
+    {item:'22',id:'DMM011', name:'Digital Thermometer',         owner:'Satawat T.',   mfr:'Chauvin Arnoux', model:'C.A.1821',      sn:'150715TLH',          range:'0-100 °C',      tol:'+/-1.0 °C',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert Type-J',                                  expiry:'26-Jul-2025'},
+    {item:'23',id:'ORI018', name:'Digimatic Caliper',           owner:'Satawat T.',   mfr:'Mitutoyo',       model:'500-197-30',    sn:'A22068999',          range:'0-200 mm',      tol:'+/- 0.014 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'11-Jul-2025'},
+    {item:'24',id:'DMM012', name:'Digital Thermometer',         owner:'Satawat T.',   mfr:'Chauvin Arnoux', model:'C.A.1822',      sn:'105057WAH',          range:'0-100 °C',      tol:'+/-1.0 °C',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert Type-J',                                  expiry:'11-Jan-2025'},
+    {item:'25',id:'DPS003', name:'Multi-Mode Pulse Simulator',  owner:'Pongtep P.',   mfr:'ST',             model:'ST502i',        sn:'5783-505',           range:'10-10000Hz',    tol:'+/- 0.001%',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
+  ],
+  '2569': [
+    {item:'1', id:'ORI001', name:'Straight Edge',               owner:'Pongtep P.',   mfr:'Starrett',       model:'380',           sn:'-',                  range:'0.0000 mm.',    tol:'+/- 0.006 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'17-Feb-2026'},
+    {item:'2', id:'ORI003', name:'Turbular Inside Micrometer',  owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'137-212',       sn:'3005573',            range:'2-6.5 inch',    tol:'+/- 0.0012 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2026'},
+    {item:'3', id:'ORI005', name:'Digimatic Caliper',           owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'500-197-20',    sn:'8103989',            range:'0-200 mm',      tol:'+/- 0.014 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:''},
+    {item:'3', id:'ORI007', name:'Digimatic Inside Micrometer', owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'339-293',       sn:'75231916',           range:'8-25 inch',     tol:'+/- 0.0005 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2026'},
+    {item:'4', id:'ORI008', name:'Infrared Thermometer',        owner:'Pongtep P.',   mfr:'Fluke',          model:'62 mini',       sn:'91986702',           range:'0-140 °F',      tol:'+/- 30 °F',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Fahrenheit',                        expiry:'17-Feb-2026'},
+    {item:'5', id:'DPS002', name:'Multi-Mode Pulse Simulator',  owner:'Pongtep P.',   mfr:'ST',             model:'ST502i',        sn:'5325-502i',          range:'10-10000Hz',    tol:'+/- 0.001%',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'11-Feb-2026'},
+    {item:'6', id:'DMM001', name:'True RMS Multimeter',         owner:'Pongtep P.',   mfr:'Fluke',          model:'179',           sn:'11170529',           range:'0-1000v,0-50MΩ,0-10A', tol:'+/- 3v,0.7MΩ,0.12A',      freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'11-Feb-2026'},
+    {item:'7', id:'DRB001', name:'Decade Resistance Box',       owner:'Pongtep P.',   mfr:'Time Electronic',model:'1067',          sn:'1496E10',            range:'0-11kΩ',        tol:'+/- 0.5% of reading, +/- 5 mΩ',    freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'80334',                                        expiry:'07-Mar-2026'},
+    {item:'8', id:'DMM004', name:'Pressure Calibrator',         owner:'Chawadol D.',  mfr:'Martel Electronic',model:'321A',        sn:'1617018',            range:'0-3,000 Psi',   tol:'+/- 1.0 Psi',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2026'},
+    {item:'9', id:'STM001', name:'Steel Tape 5M',               owner:'Chawadol D.',  mfr:'Stanley',        model:'30-496',        sn:'0-72438-58',         range:'0-5,000 mm',    tol:'+/- 2.5 mm',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'11-Feb-2026'},
+    {item:'10',id:'STM002', name:'Textile Tape 50M',            owner:'Chawadol D.',  mfr:'Stanley',        model:'34-263',        sn:'0-0397-58',          range:'0-50,000 mm',   tol:'+/- 2.4 mm',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'11-Feb-2026'},
+    {item:'11',id:'ORI010', name:'Bevel Protractor',            owner:'Pongtep P.',   mfr:'Insize',         model:'80 x 120 mm.',  sn:'1505130108',         range:'0-180 °',       tol:'+/- 1.2 °',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'11-Feb-2026'},
+    {item:'12',id:'ORI012', name:'Feeler Gauge',                owner:'Pongtep P.',   mfr:'Mituwa',         model:'No.66',         sn:'5060/06124',         range:'0.001-0.025 inch',tol:'+/- 0.00064 inch.',               freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'1 ชุด มี 26 ชิ้น',                            expiry:'17-Feb-2026'},
+    {item:'13',id:'ORI013', name:'Surface Roughness',           owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'SJ-210',        sn:'500651703',          range:'0-3.2 um.',     tol:'+/-0.030 um',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch, Cert ตัว Specimen ด้วย',    expiry:'13-Mar-2026'},
+    {item:'14',id:'ORI014', name:'Straight Edge',               owner:'Pongtep P.',   mfr:'RSK',            model:'-',             sn:'8032',               range:'0.0000 mm.',    tol:'+/- 0.006 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'26-Aug-2026'},
+    {item:'17',id:'ORI015', name:'Bevel Protractor',            owner:'Pongtep P.',   mfr:'Kennedy',        model:'KEN-518-345',   sn:'-',                  range:'0-180 °',       tol:'+/- 1.2 °',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'remove 2023',                                  expiry:'', removed:true},
+    {item:'15',id:'TWI004', name:'Digital Torque Wrench',       owner:'Chawadol D.',  mfr:'eclatorq',       model:'WS3-085CN',     sn:'WS3-085-18000132',   range:'0-62 ft-lb',    tol:'+/- 3 ft-lb',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย ft-lb',                            expiry:'23-Jun-2026'},
+    {item:'16',id:'TWI005', name:'Digital Torque Wrench',       owner:'Chawadol D.',  mfr:'eclatorq',       model:'WS3-060CN',     sn:'WS3-060-16000150',   range:'0-44 ft-lb',    tol:'+/- 3 ft-lb',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย ft-lb',                            expiry:'11-Feb-2026'},
+    {item:'17',id:'TWI006', name:'Torque Wrench',               owner:'Satawat T.',   mfr:'SATA',           model:'96311',         sn:'420031383',          range:'0-75 ft-lb',    tol:'+/- 3 ft-lb',                       freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย ft-lb',                            expiry:'23-Jun-2026'},
+    {item:'18',id:'DMM008', name:'Process Meter',               owner:'Pongtep P.',   mfr:'Fluke',          model:'787B',          sn:'42620026',           range:'0-1000v,0-40MΩ,0-10A',tol:'+/-2v,930kΩ,0.004A',        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'11-Feb-2026'},
+    {item:'19',id:'DMM009', name:'True RMS Multimeter',         owner:'Satawat T.',   mfr:'Chauvin Arnoux', model:'C.A 5275',      sn:'0280229H171200002',  range:'0-1000v,0-50MΩ,0-10A',tol:'+/- 3v,0.7MΩ,0.12A',      freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'23-Jun-2026'},
+    {item:'20',id:'ORI016', name:'Bevel Protractor',            owner:'Pongtep P.',   mfr:'Moore & Wright', model:'500-01',        sn:'530573',             range:'0-180 °',       tol:'+/- 1.2 °',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2026'},
+    {item:'21',id:'DMM010', name:'ADM Flow Meter',              owner:'Satawat T.',   mfr:'Agilent',        model:'G6691A',        sn:'MY20441234',         range:'0-100 ml/min',  tol:'+/- 5% of reading',                 freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'11-Feb-2026'},
+    {item:'22',id:'DMM011', name:'Digital Thermometer',         owner:'Satawat T.',   mfr:'Chauvin Arnoux', model:'C.A.1821',      sn:'150715TLH',          range:'0-100 °C',      tol:'+/-1.0 °C',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert Type-J',                                  expiry:'23-Jun-2026'},
+    {item:'23',id:'ORI018', name:'Digimatic Caliper',           owner:'Satawat T.',   mfr:'Mitutoyo',       model:'500-197-30',    sn:'A22068999',          range:'0-200 mm',      tol:'+/- 0.014 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'23-Jun-2026'},
+    {item:'24',id:'DMM012', name:'Digital Thermometer',         owner:'Satawat T.',   mfr:'Chauvin Arnoux', model:'C.A.1822',      sn:'105057WAH',          range:'0-100 °C',      tol:'+/-1.0 °C',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert Type-J',                                  expiry:'10-Jan-2026'},
+    {item:'25',id:'DPS003', name:'Multi-Mode Pulse Simulator',  owner:'Pongtep P.',   mfr:'ST',             model:'ST505',         sn:'5783-505',           range:'10-10000Hz',    tol:'+/- 0.001%',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'14-Mar-2026'},
+  ]
+};
+
+let currentInstYear = '2569';
+
+function switchInstYear(year, btn) {
+  // year tabs removed — single sheet mode
+  renderInstruments();
+}
+
+function parseExpiry(str) {
+  if (!str || str.trim() === '') return null;
+  // Try parse flexible date strings like "17-Feb-2025", "09-Jul-2025", "Sep-2025", "26-AUG-26"
+  const s = str.trim();
+  const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  
+  // Pattern: DD-Mon-YYYY or DD-Mon-YY
+  let m = s.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})$/);
+  if (m) {
+    const yr = m[3].length===2 ? 2000+parseInt(m[3]) : parseInt(m[3]);
+    return new Date(yr, months[m[2].toLowerCase().substr(0,3)], parseInt(m[1]));
+  }
+  // Pattern: Mon-YYYY (no day) e.g. "Sep-2025"
+  m = s.match(/^([A-Za-z]+)-(\d{2,4})$/);
+  if (m) {
+    const yr = m[2].length===2 ? 2000+parseInt(m[2]) : parseInt(m[2]);
+    return new Date(yr, months[m[1].toLowerCase().substr(0,3)], 1);
+  }
+  return null;
+}
+
+function getInstStatus(inst) {
+  if (inst.removed) return 'removed';
+  const exp = parseExpiry(inst.expiry);
+  if (!exp) return 'valid';
+  const now = new Date(); now.setHours(0,0,0,0);
+  const diff = Math.round((exp - now) / (1000*60*60*24));
+  if (diff < 0) return 'expired';
+  if (diff <= 90) return 'soon';
+  return 'valid';
+}
+
+function getDaysLeft(inst) {
+  if (inst.removed) return null;
+  const exp = parseExpiry(inst.expiry);
+  if (!exp) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  return Math.round((exp - now) / (1000*60*60*24));
+}
+
+function updateOwnerFilter() {
+  const data = allInstruments;
+  const owners = [...new Set(data.map(i => i.owner))].sort();
+  const sel = document.getElementById('instFilterOwner');
+  sel.innerHTML = '<option value="all">ผู้เก็บรักษาทุกคน</option>' +
+    owners.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+function renderInstruments() {
+  const data = allInstruments;
+  const ownerF  = document.getElementById('instFilterOwner').value;
+  const statusF = document.getElementById('instFilterStatus').value;
+  const query   = (document.getElementById('instSearch').value || '').toLowerCase();
+
+  const filtered = data.filter(inst => {
+    const st = getInstStatus(inst);
+    const ownerOk  = ownerF === 'all' || inst.owner === ownerF;
+    const statusOk = statusF === 'all' || st === statusF;
+    const searchOk = !query || [inst.id,inst.name,inst.model,inst.mfr,inst.sn]
+                       .some(f => (f||'').toLowerCase().includes(query));
+    return ownerOk && statusOk && searchOk;
+  });
+
+  // KPIs (from full dataset)
+  const expired = data.filter(i => getInstStatus(i) === 'expired').length;
+  const soon    = data.filter(i => getInstStatus(i) === 'soon').length;
+  const valid   = data.filter(i => getInstStatus(i) === 'valid').length;
+  document.getElementById('instTotal').textContent   = data.filter(i => !i.removed).length;
+  document.getElementById('instExpired').textContent = expired;
+  document.getElementById('instSoon').textContent    = soon;
+  document.getElementById('instValid').textContent   = valid;
+  document.getElementById('instCount').textContent   = `${filtered.length} รายการ`;
+
+  // Expiry banner
+  const banner = document.getElementById('expiryBanner');
+  const alerts = data.filter(i => getInstStatus(i) === 'expired' || getInstStatus(i) === 'soon');
+  if (alerts.length) {
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span class="expiry-banner-title">⚠️ แจ้งเตือนสอบเทียบ</span>` +
+      alerts.map(i => {
+        const st = getInstStatus(i);
+        const d  = getDaysLeft(i);
+        const dStr = d !== null ? (d < 0 ? `เกิน ${Math.abs(d)} วัน` : `${d} วัน`) : '';
+        return `<span class="expiry-chip ${st==='soon'?'soon':''}">${i.id} ${i.name} ${dStr ? `(${dStr})` : ''}</span>`;
+      }).join('');
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Table
+  const tbody = document.getElementById('instTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:24px">ไม่พบข้อมูล</td></tr>';
+    return;
+  }
+
+  const statusCls = { valid:'badge-valid', soon:'badge-soon', expired:'badge-expired', removed:'badge-removed' };
+  const statusTh  = { valid:'ใช้ได้ปกติ', soon:'ใกล้หมดอายุ', expired:'หมดอายุแล้ว', removed:'ยกเลิกใช้' };
+
+  tbody.innerHTML = filtered.map(inst => {
+    const st   = getInstStatus(inst);
+    const days = getDaysLeft(inst);
+    let daysBadge = '';
+    if (days !== null && !inst.removed) {
+      const dcls = days < 0 ? 'days-exp' : days <= 90 ? 'days-warn' : 'days-ok';
+      const dtxt = days < 0 ? `เกิน ${Math.abs(days)}ว` : `${days}ว`;
+      daysBadge = `<span class="days-pill ${dcls}">${dtxt}</span>`;
+    }
+    const expDisplay = inst.expiry ? `${inst.expiry}${daysBadge}` : '—';
+    const rowStyle = st === 'expired' ? 'background:rgba(248,81,73,0.03)' : st === 'soon' ? 'background:rgba(240,173,78,0.03)' : '';
+    return `<tr style="${rowStyle}">
+      <td style="color:var(--text3);font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${inst.item}</td>
+      <td style="font-family:var(--mono);font-size:0.82rem;color:var(--accent2);font-weight:600;white-space:nowrap">${inst.id}</td>
+      <td style="color:var(--text);font-weight:500">${inst.name}</td>
+      <td style="color:var(--text2);font-size:0.83rem;white-space:nowrap">${inst.owner}</td>
+      <td style="white-space:nowrap">${inst.mfr}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${inst.model}</td>
+      <td style="font-family:var(--mono);font-size:0.78rem;color:var(--text3);white-space:nowrap">${inst.sn}</td>
+      <td style="font-size:0.82rem;white-space:nowrap">${inst.range}</td>
+      <td style="font-size:0.8rem;color:var(--text3)">${inst.tol}</td>
+      <td style="white-space:nowrap;font-family:var(--mono);font-size:0.8rem">${expDisplay}</td>
+      <td><span class="badge ${statusCls[st]}">${statusTh[st]}</span></td>
+    </tr>`;
+  }).join('');
+
+  renderCalibrationTimeline(data);
+}
+
+function renderCalibrationTimeline(data) {
+  const container = document.getElementById('calibrationTimeline');
+  if (!container) return;
+
+  const withDate = data
+    .filter(i => !i.removed && i.expiry)
+    .map(i => ({ ...i, expDate: parseExpiry(i.expiry) }))
+    .filter(i => i.expDate)
+    .sort((a,b) => a.expDate - b.expDate);
+
+  if (!withDate.length) { container.innerHTML = '<p style="color:var(--text3)">ไม่มีข้อมูลวันหมดอายุ</p>'; return; }
+
+  const now = new Date(); now.setHours(0,0,0,0);
+  const maxDays = 365;
+
+  container.innerHTML = withDate.map(inst => {
+    const st = getInstStatus(inst);
+    const days = Math.round((inst.expDate - now)/(1000*60*60*24));
+    const pct  = Math.max(0, Math.min(100, (days / maxDays) * 100));
+    const barColor = st === 'expired' ? 'var(--danger)' : st === 'soon' ? 'var(--warn)' : 'var(--success)';
+    const rowCls   = st === 'expired' ? 'expired-row' : st === 'soon' ? 'soon-row' : '';
+    const daysTxt  = days < 0 ? `เกิน ${Math.abs(days)} วัน` : days === 0 ? 'วันนี้' : `${days} วัน`;
+    return `<div class="cal-item ${rowCls}">
+      <span class="cal-name">${inst.id} — ${inst.name}</span>
+      <div class="cal-bar-track"><div class="cal-bar-fill" style="width:${st==='expired'?0:pct}%;background:${barColor}"></div></div>
+      <span class="cal-date">${inst.expiry} <span style="font-size:0.7rem;color:${barColor}">(${daysTxt})</span></span>
+      <span class="cal-owner">${inst.owner}</span>
+    </div>`;
+  }).join('');
+}
+
+function exportInstrumentsCSV() {
+  const data = INSTRUMENT_DATA[currentInstYear] || [];
+  const headers = ['Item','รหัส','ชื่อเครื่องมือ','ผู้เก็บรักษา','Manufacturer','Model','S/N','Range','ค่าความคลาดเคลื่อน','วันหมดอายุ','สถานะ'];
+  const stTh = { valid:'ใช้ได้ปกติ', soon:'ใกล้หมดอายุ', expired:'หมดอายุแล้ว', removed:'ยกเลิกใช้' };
+  const rows = data.map(i => [i.item,i.id,i.name,i.owner,i.mfr,i.model,i.sn,i.range,i.tol,i.expiry||'',stTh[getInstStatus(i)]].join(','));
+  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `MPS_Instruments_${currentInstYear}.csv`;
+  a.click();
+  showToast('Export CSV เครื่องมือวัดสำเร็จ', 'success');
+}
+
+// updateHeader now handles instruments tab directly
+
+// Init instruments tab on navigation
+document.addEventListener('DOMContentLoaded', () => {
+  // instruments rendered on tab click via loadAllData
+});
+
+/* ============================================================
+   THEME TOGGLE — Dark / Light Mode
+   ============================================================ */
+const MOON_ICON = `<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+const SUN_ICON  = `<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
+
+function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  loadAllData().finally(() => {
+    setTimeout(() => btn.classList.remove('spinning'), 600);
+  });
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const isLight = root.classList.toggle('light');
+  const icon = document.getElementById('themeIcon');
+  if (icon) icon.innerHTML = isLight ? SUN_ICON : MOON_ICON;
+  localStorage.setItem('mps_theme', isLight ? 'light' : 'dark');
+  // Redraw canvas charts after theme switch
+  setTimeout(() => {
+    if (currentTab === 'analytics') renderAnalytics();
+  }, 50);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('mps_theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.innerHTML = SUN_ICON;
+  }
+}
+
+// Call on load
+document.addEventListener('DOMContentLoaded', initTheme);
+
+</script>
+</body>
+</html>
