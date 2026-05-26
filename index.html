@@ -462,6 +462,110 @@ canvas { max-width: 100%; }
   .analytics-card.span-2 { grid-column: span 1; }
 }
 
+
+/* ===== INTERNAL TEST TAB ===== */
+.it-header {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.it-module-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.it-mod-tab {
+  padding: 7px 16px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--bg3);
+  color: var(--text2); cursor: pointer; font-family: var(--font);
+  font-size: 0.82rem; transition: all 0.15s; white-space: nowrap;
+}
+.it-mod-tab.active { background: var(--accent2); border-color: var(--accent2); color: #fff; font-weight: 600; }
+.it-mod-tab:hover:not(.active) { border-color: var(--text2); color: var(--text); }
+.it-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.it-save-btn {
+  padding: 7px 16px; display: flex; align-items: center; gap: 6px;
+  background: var(--accent); border: none; border-radius: var(--radius-sm);
+  color: #000; font-family: var(--font); font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.it-save-btn svg { width: 14px; height: 14px; }
+.it-save-btn:hover { background: #00f0c0; transform: translateY(-1px); }
+
+/* Checklist form card */
+.it-form-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.it-form-header {
+  padding: 20px 24px 16px;
+  background: linear-gradient(135deg, rgba(0,153,255,0.06), transparent);
+  border-bottom: 1px solid var(--border);
+}
+.it-form-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+.it-serial-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;
+}
+.it-serial-field { display: flex; flex-direction: column; gap: 4px; }
+.it-serial-field label { font-size: 0.75rem; color: var(--text3); font-weight: 600; }
+.it-serial-field input {
+  padding: 7px 10px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); font-family: var(--mono);
+  font-size: 0.85rem; outline: none; transition: border-color 0.15s;
+}
+.it-serial-field input:focus { border-color: var(--accent2); }
+
+.it-checklist-body { padding: 16px 24px; }
+.it-section-title {
+  font-size: 0.78rem; font-weight: 700; color: var(--accent2);
+  text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 8px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.it-check-row {
+  display: grid; grid-template-columns: 1fr 160px 1fr;
+  align-items: center; gap: 12px; padding: 8px 0;
+  border-bottom: 1px solid rgba(48,54,61,0.4);
+}
+.it-check-row:last-child { border-bottom: none; }
+.it-check-name { font-size: 0.87rem; color: var(--text); }
+.it-check-btns { display: flex; gap: 6px; }
+.it-pass-btn, .it-fail-btn {
+  flex: 1; padding: 5px 10px; border-radius: 5px; font-size: 0.78rem;
+  font-weight: 700; cursor: pointer; font-family: var(--font);
+  border: 1.5px solid transparent; transition: all 0.12s;
+}
+.it-pass-btn {
+  background: rgba(63,185,80,0.08); border-color: rgba(63,185,80,0.3);
+  color: var(--success);
+}
+.it-pass-btn.selected { background: var(--success); color: #000; border-color: var(--success); }
+.it-fail-btn {
+  background: rgba(248,81,73,0.08); border-color: rgba(248,81,73,0.3);
+  color: var(--danger);
+}
+.it-fail-btn.selected { background: var(--danger); color: #fff; border-color: var(--danger); }
+.it-remark-input {
+  padding: 5px 8px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--text2); font-family: var(--font);
+  font-size: 0.8rem; outline: none; width: 100%;
+}
+.it-remark-input:focus { border-color: var(--accent2); }
+
+/* Summary bar */
+.it-summary-bar {
+  display: flex; gap: 16px; align-items: center;
+  padding: 12px 24px; background: var(--bg3);
+  border-top: 1px solid var(--border); flex-wrap: wrap;
+}
+.it-sum-item { display: flex; align-items: center; gap: 6px; font-size: 0.84rem; }
+.it-sum-dot { width: 8px; height: 8px; border-radius: 50%; }
+.it-sum-total { color: var(--text2); }
+.it-progress { flex: 1; min-width: 120px; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.it-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--success), var(--accent)); transition: width 0.3s; }
+
+/* Test history table badges */
+.badge-pass-all  { background: rgba(63,185,80,0.15); color: var(--success); }
+.badge-has-fail  { background: rgba(248,81,73,0.15); color: var(--danger); }
+.badge-partial   { background: rgba(240,173,78,0.15); color: var(--warn); }
+.badge-in-stock  { background: rgba(0,212,170,0.15); color: var(--accent); }
+.badge-not-saved { background: rgba(88,98,109,0.2); color: var(--text3); }
+
 /* ===== INSTRUMENTS TAB ===== */
 .inst-controls {
   display: flex; flex-direction: column; gap: 10px;
@@ -737,7 +841,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.4.1</div>
+    <div class="login-footer">MPS Department · v1.5.0</div>
   </div>
 </div>
 
@@ -771,13 +875,17 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
         <svg viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke="currentColor" stroke-width="2"/><path d="M12 6v2M12 16v2M6 12H4M20 12h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
         <span>เครื่องมือวัด</span>
       </button>
+      <button class="nav-item" data-tab="internaltest">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Internal Test</span>
+      </button>
       <button class="nav-item" data-tab="analytics">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span>Analytics</span>
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.4.1</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.5.0</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -1177,7 +1285,70 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       </div>
     </div>
 
+    <!-- Tab: Internal Test Spare Part -->
+    <div class="tab-content" id="tab-internaltest">
+
+      <!-- Header controls -->
+      <div class="it-header">
+        <div class="it-module-tabs" id="itModuleTabs">
+          <button class="it-mod-tab active" data-mod="fc_full">Flow Computer (Full)</button>
+          <button class="it-mod-tab" data-mod="backplane">Backplane</button>
+          <button class="it-mod-tab" data-mod="cpu">CPU Module</button>
+          <button class="it-mod-tab" data-mod="frontpanel">Front Panel</button>
+          <button class="it-mod-tab" data-mod="hart">HART Module</button>
+          <button class="it-mod-tab" data-mod="io">I/O Module</button>
+        </div>
+        <div class="it-actions">
+          <button class="btn-export" onclick="exportTestPDF()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/><line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Export PDF
+          </button>
+          <button class="btn-export" onclick="resetChecklist()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 3v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Reset
+          </button>
+          <button class="it-save-btn" onclick="saveToStockFromTest()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/><polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="2"/><polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="2"/></svg>
+            บันทึกเข้าคลัง
+          </button>
+        </div>
+      </div>
+
+      <!-- Checklist Form -->
+      <div class="it-form-card" id="itFormCard">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+      <!-- Test History -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">ประวัติการทดสอบ</span>
+          <span class="inst-count" id="testHistoryCount"></span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>Module</th>
+                <th>Serial Number</th>
+                <th>ทดสอบโดย</th>
+                <th>ผล</th>
+                <th>Pass</th>
+                <th>Fail</th>
+                <th>สถานะคลัง</th>
+              </tr>
+            </thead>
+            <tbody id="testHistoryBody">
+              <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- Tab: Analytics -->
+
     <div class="tab-content" id="tab-analytics">
       <div class="analytics-grid">
         <div class="analytics-card span-2">
@@ -1578,6 +1749,7 @@ function initNavigation() {
       if (tab === 'analytics') renderAnalytics();
       if (tab === 'report') generateReport();
       if (tab === 'instruments') { updateOwnerFilter(); renderInstruments(); }
+      if (tab === 'internaltest') initInternalTest();
     });
   });
 
@@ -1592,7 +1764,7 @@ function initNavigation() {
 }
 
 function updateHeader(tab) {
-  const titles = { warehouse:'คลังสินค้า', borrow:'ยืม / คืน', report:'รายงาน', analytics:'Analytics', instruments:'เครื่องมือวัด' };
+  const titles = { warehouse:'คลังสินค้า', borrow:'ยืม / คืน', report:'รายงาน', analytics:'Analytics', instruments:'เครื่องมือวัด', internaltest:'Internal Test' };
   document.getElementById('pageTitle').textContent = titles[tab] || '';
   document.getElementById('pageSub').textContent   = '';
 }
@@ -2492,7 +2664,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.4.1
+   AUTH / LOGIN SYSTEM  v1.5.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    Roles: admin | user | viewer
@@ -2642,5 +2814,391 @@ function showLoginError(msg) {
 }
 
 </script>
-</body>
+
 </html>
+<script>
+/* ============================================================
+   INTERNAL TEST MODULE  v1.5.0
+   FloBoss S600+ Checklist — Pass/Fail per item + PDF export
+   ============================================================ */
+
+// ── Checklist definitions from PDF
+const IT_MODULES = {
+  fc_full: {
+    title: 'Flow Computer FloBoss S600+ (Full)',
+    serials: [
+      { key:'fc_sn',   label:'Flow Computer Serial Number' },
+      { key:'cpu_sn',  label:'CPU Module Serial Number' },
+      { key:'io_sn',   label:'I/O Module Serial Number' },
+      { key:'hart_sn', label:'HART Module Serial Number' },
+      { key:'fp_sn',   label:'Front Panel Serial Number' },
+    ],
+    sections: [
+      { title:'General', items:['PCB Board Checked','Backup Battery Checked','Power input/output Checked','LCD Display Checked','Keypad Checked','LED Alarm Checked'] },
+      { title:'Network & Communication', items:['Network 1 Checked','Network 2 Checked','Comm 1 (Display) Checked','Comm 2 (PC Link) Checked','Comm 3 (RS-232) Checked','Comm 4 (RS-232) Checked','Comm 5 (RS-485) Checked','Comm 6 (RS-485) Checked','Comm 7 (RS-485) Checked','Comm 8 (I/O) Checked','Comm 9 (RS-485) Checked','Comm 10 (RS-485) Checked','Comm 11 (RS-485) Checked','Comm 12 (RS-485) Checked','USB Port Checked'] },
+      { title:'I/O Channels', items:['Analogue Input Channel 1','Analogue Input Channel 2','Analogue Output Channel 1','Analogue Output Channel 2','Pulse Input Channel 1','Pulse Input Channel 2','Pulse Input Channel 3','Pulse Input Channel 4'] },
+      { title:'HART Channels', items:['HART Input Channel 1','HART Input Channel 2','HART Input Channel 3'] },
+    ]
+  },
+  backplane: {
+    title: 'Backplane of FloBoss S600+',
+    serials: [{ key:'bp_sn', label:'Serial Number' }],
+    sections: [
+      { title:'Backplane Checklist', items:['PCB Board Checked','Front Panel Slot Checked','CPU Slot Checked','I/O, HART Slot 1 Checked','I/O, HART Slot 2 Checked','I/O, HART Slot 3 Checked'] }
+    ]
+  },
+  cpu: {
+    title: 'CPU Module of FloBoss S600+',
+    serials: [{ key:'cpu_sn', label:'Serial Number' }],
+    sections: [
+      { title:'General', items:['PCB Board Checked','Backup Battery Checked','Power input/output Checked'] },
+      { title:'Network & Communication', items:['Network 1 Checked','Network 2 Checked','Comm 1 (Display) Checked','Comm 2 (PC Link) Checked','Comm 3 (RS-232) Checked','Comm 4 (RS-232) Checked','Comm 5 (RS-485) Checked','Comm 6 (RS-485) Checked','Comm 7 (RS-485) Checked','Comm 8 (I/O) Checked','Comm 9 (RS-485) Checked','Comm 10 (RS-485) Checked','Comm 11 (RS-485) Checked','Comm 12 (RS-485) Checked','USB Port Checked'] }
+    ]
+  },
+  frontpanel: {
+    title: 'Front Panel of FloBoss S600+',
+    serials: [{ key:'fp_sn', label:'Serial Number' }],
+    sections: [
+      { title:'Front Panel Checklist', items:['PCB Board Checked','LCD Display Checked','Keypad Checked','LED Alarm Checked','Display Port (Comm1) Checked','Front Panel Port (Comm2) Checked'] }
+    ]
+  },
+  hart: {
+    title: 'HART Module of FloBoss S600+',
+    serials: [{ key:'hart_sn', label:'HART Module Serial Number' }],
+    sections: [
+      { title:'HART Module Checklist', items:['PCB Board Checked','HART Input Channel 1','HART Input Channel 2','HART Input Channel 3'] }
+    ]
+  },
+  io: {
+    title: 'I/O Module of FloBoss S600+',
+    serials: [{ key:'io_sn', label:'I/O Module Serial Number' }],
+    sections: [
+      { title:'I/O Module Checklist', items:['PCB Board Checked','Analogue Input Channel 1','Analogue Input Channel 2','Analogue Output Channel 1','Analogue Output Channel 2','Pulse Input Channel 1','Pulse Input Channel 2','Pulse Input Channel 3','Pulse Input Channel 4'] }
+    ]
+  }
+};
+
+// ── Map module to stock item for "add to stock"
+const MODULE_TO_STOCK = {
+  fc_full:    { id:'FC-FULL', name:'Flow Computer FloBoss S600+ (Complete)', category:'flow', brand:'Emerson', unit:'ชุด' },
+  backplane:  { id:'FC-BP',   name:'Backplane FloBoss S600+',               category:'flow', brand:'Emerson', unit:'ชิ้น' },
+  cpu:        { id:'FC-CPU',  name:'CPU Module FloBoss S600+',              category:'flow', brand:'Emerson', unit:'ชิ้น' },
+  frontpanel: { id:'FC-FP',   name:'Front Panel FloBoss S600+',             category:'flow', brand:'Emerson', unit:'ชิ้น' },
+  hart:       { id:'FC-HART', name:'HART Module FloBoss S600+',             category:'flow', brand:'Emerson', unit:'ชิ้น' },
+  io:         { id:'FC-IO',   name:'I/O Module FloBoss S600+',              category:'flow', brand:'Emerson', unit:'ชิ้น' },
+};
+
+let itCurrentMod = 'fc_full';
+let itResults    = {};  // { itemKey: 'pass'|'fail'|null }
+let itRemarks    = {};  // { itemKey: 'remark text' }
+let itSerials    = {};  // { serial_key: value }
+let itTestHistory = JSON.parse(localStorage.getItem('mps_test_history') || '[]');
+let itTester     = { name:'', designation:'', company:'' };
+
+function initInternalTest() {
+  renderITModuleTabs();
+  renderITChecklist();
+  renderTestHistory();
+}
+
+function renderITModuleTabs() {
+  document.querySelectorAll('.it-mod-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.it-mod-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      itCurrentMod = btn.dataset.mod;
+      itResults = {}; itRemarks = {}; itSerials = {};
+      renderITChecklist();
+    });
+  });
+}
+
+function renderITChecklist() {
+  const mod = IT_MODULES[itCurrentMod];
+  if (!mod) return;
+  const allItems = mod.sections.flatMap(s => s.items);
+
+  const serialsHtml = mod.serials.map(s => `
+    <div class="it-serial-field">
+      <label>${s.label}</label>
+      <input type="text" id="serial_${s.key}" placeholder="ระบุ Serial Number"
+             value="${itSerials[s.key]||''}"
+             onchange="itSerials['${s.key}']=this.value">
+    </div>`).join('');
+
+  const sectionsHtml = mod.sections.map(sec => `
+    <div class="it-section-title">${sec.title}</div>
+    ${sec.items.map(item => {
+      const key = btoa(unescape(encodeURIComponent(item))).slice(0,12);
+      const res = itResults[key];
+      return `<div class="it-check-row">
+        <span class="it-check-name">${item}</span>
+        <div class="it-check-btns">
+          <button class="it-pass-btn ${res==='pass'?'selected':''}"
+                  onclick="setCheckResult('${key}','pass',this)">✓ Pass</button>
+          <button class="it-fail-btn ${res==='fail'?'selected':''}"
+                  onclick="setCheckResult('${key}','fail',this)">✗ Fail</button>
+        </div>
+        <input class="it-remark-input" type="text" placeholder="หมายเหตุ"
+               value="${itRemarks[key]||''}"
+               onchange="itRemarks['${key}']=this.value">
+      </div>`;
+    }).join('')}`).join('');
+
+  const passCount = Object.values(itResults).filter(v=>v==='pass').length;
+  const failCount = Object.values(itResults).filter(v=>v==='fail').length;
+  const pct = allItems.length ? Math.round((passCount+failCount)/allItems.length*100) : 0;
+
+  // Tester info
+  const testerHtml = `
+    <div class="it-section-title" style="margin-top:18px">ข้อมูลผู้ทดสอบ</div>
+    <div class="it-serial-grid" style="margin-bottom:4px">
+      <div class="it-serial-field">
+        <label>Tested By</label>
+        <input type="text" id="it_tester" placeholder="ชื่อผู้ทดสอบ"
+               value="${itTester.name||currentUser?.name||''}"
+               onchange="itTester.name=this.value">
+      </div>
+      <div class="it-serial-field">
+        <label>Designation</label>
+        <input type="text" id="it_desig" placeholder="ตำแหน่ง"
+               value="${itTester.designation||''}"
+               onchange="itTester.designation=this.value">
+      </div>
+      <div class="it-serial-field">
+        <label>Company</label>
+        <input type="text" id="it_company" placeholder="บริษัท" value="${itTester.company||'PTT'}"
+               onchange="itTester.company=this.value">
+      </div>
+      <div class="it-serial-field">
+        <label>Date of Test</label>
+        <input type="date" id="it_date" value="${new Date().toISOString().split('T')[0]}"
+               onchange="itTester.date=this.value">
+      </div>
+    </div>`;
+
+  document.getElementById('itFormCard').innerHTML = `
+    <div class="it-form-header">
+      <div class="it-form-title">🔧 ${mod.title}</div>
+      <div class="it-serial-grid">${serialsHtml}</div>
+      ${testerHtml}
+    </div>
+    <div class="it-checklist-body">${sectionsHtml}</div>
+    <div class="it-summary-bar">
+      <span class="it-sum-item"><span class="it-sum-dot" style="background:var(--success)"></span><strong style="color:var(--success)">${passCount}</strong>&nbsp;Pass</span>
+      <span class="it-sum-item"><span class="it-sum-dot" style="background:var(--danger)"></span><strong style="color:var(--danger)">${failCount}</strong>&nbsp;Fail</span>
+      <span class="it-sum-item it-sum-total">${passCount+failCount} / ${allItems.length} รายการ</span>
+      <div class="it-progress"><div class="it-progress-fill" style="width:${pct}%"></div></div>
+      <span style="font-size:0.8rem;color:var(--text3);font-family:var(--mono)">${pct}%</span>
+    </div>`;
+}
+
+function setCheckResult(key, result, btn) {
+  itResults[key] = result;
+  const row = btn.closest('.it-check-row');
+  row.querySelectorAll('.it-pass-btn').forEach(b => b.classList.remove('selected'));
+  row.querySelectorAll('.it-fail-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  // Update summary bar
+  const mod = IT_MODULES[itCurrentMod];
+  const allItems = mod.sections.flatMap(s => s.items);
+  const passCount = Object.values(itResults).filter(v=>v==='pass').length;
+  const failCount = Object.values(itResults).filter(v=>v==='fail').length;
+  const pct = allItems.length ? Math.round((passCount+failCount)/allItems.length*100) : 0;
+  const bar = document.querySelector('.it-summary-bar');
+  if (bar) bar.innerHTML = `
+    <span class="it-sum-item"><span class="it-sum-dot" style="background:var(--success)"></span><strong style="color:var(--success)">${passCount}</strong>&nbsp;Pass</span>
+    <span class="it-sum-item"><span class="it-sum-dot" style="background:var(--danger)"></span><strong style="color:var(--danger)">${failCount}</strong>&nbsp;Fail</span>
+    <span class="it-sum-item it-sum-total">${passCount+failCount} / ${allItems.length} รายการ</span>
+    <div class="it-progress"><div class="it-progress-fill" style="width:${pct}%"></div></div>
+    <span style="font-size:0.8rem;color:var(--text3);font-family:var(--mono)">${pct}%</span>`;
+}
+
+function resetChecklist() {
+  if (!confirm('ล้างข้อมูล checklist ทั้งหมดใช่หรือไม่?')) return;
+  itResults = {}; itRemarks = {}; itSerials = {};
+  renderITChecklist();
+}
+
+// ── Save test result to history + add to stock
+function saveToStockFromTest() {
+  const mod = IT_MODULES[itCurrentMod];
+  const allItems = mod.sections.flatMap(s => s.items);
+  const passCount = Object.values(itResults).filter(v=>v==='pass').length;
+  const failCount = Object.values(itResults).filter(v=>v==='fail').length;
+  const answered  = passCount + failCount;
+
+  if (answered < allItems.length * 0.5) {
+    showToast('กรุณาทำ checklist ให้ครบอย่างน้อย 50% ก่อนบันทึก', 'warn');
+    return;
+  }
+
+  const overallPass = failCount === 0 && passCount === allItems.length;
+  const date = document.getElementById('it_date')?.value || new Date().toISOString().split('T')[0];
+  const tester = document.getElementById('it_tester')?.value || currentUser?.name || '—';
+
+  // Save to history
+  const record = {
+    id: 'IT-' + Date.now().toString().slice(-6),
+    date, module: itCurrentMod, moduleTitle: mod.title,
+    serialNumbers: { ...itSerials },
+    tester, designation: itTester.designation||'', company: itTester.company||'',
+    passCount, failCount, total: allItems.length,
+    overall: failCount === 0 ? 'pass' : passCount > 0 ? 'partial' : 'fail',
+    inStock: false,
+    results: { ...itResults }, remarks: { ...itRemarks }
+  };
+  itTestHistory.unshift(record);
+  localStorage.setItem('mps_test_history', JSON.stringify(itTestHistory.slice(0,100)));
+
+  // Add to stock if pass
+  if (overallPass) {
+    const stockDef = MODULE_TO_STOCK[itCurrentMod];
+    const existing = allStock.find(i => i.id === stockDef.id);
+    if (existing) {
+      existing.qty = String(parseInt(existing.qty||0) + 1);
+    } else {
+      allStock.push({ ...stockDef, qty:'1', minQty:'1', partNo:'—', location:'—', status:'ok' });
+    }
+    record.inStock = true;
+    itTestHistory[0].inStock = true;
+    localStorage.setItem('mps_test_history', JSON.stringify(itTestHistory.slice(0,100)));
+    renderWarehouse();
+    showToast(`✅ บันทึกประวัติและเพิ่ม "${stockDef.name}" เข้าคลังแล้ว`, 'success');
+  } else {
+    showToast(`⚠️ บันทึกประวัติแล้ว — ไม่เพิ่มเข้าคลังเพราะมี ${failCount} รายการที่ Fail`, 'warn');
+  }
+
+  renderTestHistory();
+}
+
+function renderTestHistory() {
+  const tbody = document.getElementById('testHistoryBody');
+  if (!tbody) return;
+  document.getElementById('testHistoryCount').textContent = `${itTestHistory.length} รายการ`;
+  if (!itTestHistory.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>';
+    return;
+  }
+  tbody.innerHTML = itTestHistory.map(r => {
+    const ovCls = r.overall==='pass' ? 'badge-pass-all' : r.overall==='partial' ? 'badge-partial' : 'badge-has-fail';
+    const ovTh  = r.overall==='pass' ? 'Pass ทั้งหมด' : r.overall==='partial' ? 'บางส่วน' : 'มี Fail';
+    const stk   = r.inStock ? '<span class="badge badge-in-stock">เข้าคลังแล้ว</span>' : '<span class="badge badge-not-saved">ยังไม่เพิ่ม</span>';
+    const sns   = Object.values(r.serialNumbers||{}).filter(Boolean).join(', ') || '—';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:0.8rem">${r.date}</td>
+      <td style="font-weight:500">${r.moduleTitle}</td>
+      <td style="font-family:var(--mono);font-size:0.78rem;color:var(--text3)">${sns}</td>
+      <td>${r.tester}</td>
+      <td><span class="badge ${ovCls}">${ovTh}</span></td>
+      <td style="color:var(--success);font-weight:700;font-family:var(--mono)">${r.passCount}</td>
+      <td style="color:${r.failCount>0?'var(--danger)':'var(--text3)'};font-weight:700;font-family:var(--mono)">${r.failCount}</td>
+      <td>${stk}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Export PDF using print styles
+function exportTestPDF() {
+  const mod    = IT_MODULES[itCurrentMod];
+  const allItems = mod.sections.flatMap(s => s.items);
+  const passC  = Object.values(itResults).filter(v=>v==='pass').length;
+  const failC  = Object.values(itResults).filter(v=>v==='fail').length;
+  const date   = document.getElementById('it_date')?.value || new Date().toISOString().split('T')[0];
+  const tester = document.getElementById('it_tester')?.value || '—';
+  const desig  = document.getElementById('it_desig')?.value  || '—';
+  const company= document.getElementById('it_company')?.value|| '—';
+
+  const serialRows = mod.serials.map(s =>
+    `<p style="margin:3px 0"><strong>${s.label}:</strong> ${(itSerials[s.key]||'').padEnd(40,'_').replace(/ /g,'&nbsp;')}</p>`
+  ).join('');
+
+  const checkRows = mod.sections.map(sec => `
+    <tr><td colspan="3" style="background:#f0f4f8;font-weight:700;padding:7px 10px;font-size:12px;color:#1a2332">${sec.title}</td></tr>
+    ${sec.items.map(item => {
+      const key = btoa(unescape(encodeURIComponent(item))).slice(0,12);
+      const res = itResults[key];
+      const passBox = res==='pass' ? '☑' : '☐';
+      const failBox = res==='fail' ? '☑' : '☐';
+      const remark  = itRemarks[key] || '';
+      return `<tr>
+        <td style="padding:6px 10px;font-size:12px">• ${item}</td>
+        <td style="padding:6px 10px;text-align:center;font-size:13px;white-space:nowrap">${passBox} Pass &nbsp; ${failBox} Fail</td>
+        <td style="padding:6px 10px;font-size:11px;color:#64748b">${remark}</td>
+      </tr>`;
+    }).join('')}`
+  ).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>${mod.title} — Checklist</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; padding: 32px; color: #1a2332; font-size: 13px; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 3px solid #0050a0; padding-bottom: 16px; }
+      .title { font-size: 18px; font-weight: bold; color: #0050a0; margin-bottom: 4px; }
+      .subtitle { font-size: 14px; color: #666; }
+      .logo-box { text-align: right; }
+      .logo-text { font-size: 22px; font-weight: 900; color: #0050a0; letter-spacing: -1px; }
+      .logo-sub { font-size: 10px; color: #888; }
+      .serials { margin-bottom: 16px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      th { background: #0050a0; color: white; padding: 8px 10px; font-size: 12px; text-align: left; }
+      td { border-bottom: 1px solid #e2e8f0; }
+      tr:nth-child(even) td { background: #fafafa; }
+      .sig-row { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px; }
+      .sig-block p { margin-bottom: 8px; font-size: 12px; }
+      .sig-line { border-bottom: 1px solid #999; margin-bottom: 4px; padding-bottom: 14px; }
+      .summary-box { display: flex; gap: 20px; margin-bottom: 16px; padding: 10px 16px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; }
+      .sum-item { font-size: 13px; }
+      .notes-box { margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; min-height: 50px; }
+      @media print { body { padding: 16px; } }
+    </style>
+  </head><body>
+    <div class="header">
+      <div>
+        <div class="title">${mod.title}</div>
+        <div class="subtitle">Checklist Sheet — FloBoss S600+</div>
+      </div>
+      <div class="logo-box">
+        <div class="logo-text">EMERSON</div>
+        <div class="logo-sub">Process Management</div>
+      </div>
+    </div>
+    <div class="serials">${serialRows}</div>
+    <div class="summary-box">
+      <span class="sum-item">✅ <strong>Pass: ${passC}</strong></span>
+      <span class="sum-item">❌ <strong>Fail: ${failC}</strong></span>
+      <span class="sum-item">📋 Total: ${allItems.length}</span>
+      <span class="sum-item">📅 Date: ${date}</span>
+    </div>
+    <table>
+      <thead><tr><th style="width:45%">Equipment Checklist</th><th style="width:25%">Check</th><th>Remarks</th></tr></thead>
+      <tbody>${checkRows}</tbody>
+    </table>
+    <div class="notes-box"><strong>Note(s):</strong><br><br></div>
+    <div class="sig-row">
+      <div class="sig-block">
+        <p><strong>Tested By:</strong></p>
+        <div class="sig-line">&nbsp;</div>
+        <p>Name: ${tester}</p>
+        <p>Designation: ${desig}</p>
+        <p>Company: ${company}</p>
+        <p>Date of Test: ${date}</p>
+      </div>
+      <div class="sig-block">
+        <p><strong>Witnessed By:</strong></p>
+        <div class="sig-line">&nbsp;</div>
+        <p>Name: _______________________</p>
+        <p>Designation: _______________________</p>
+        <p>Company: _______________________</p>
+        <p>Date of Test: _______________________</p>
+      </div>
+    </div>
+    <script>window.onload = () => { window.print(); }<\/script>
+  </html>`);
+  win.document.close();
+}
+</script>
+</body>
