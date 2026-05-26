@@ -885,7 +885,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.6.2</div>
+    <div class="login-footer">MPS Department · v1.6.3</div>
   </div>
 </div>
 
@@ -933,7 +933,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.6.2</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.6.3</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -2782,7 +2782,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.6.2
+   AUTH / LOGIN SYSTEM  v1.6.3
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    Roles: admin | user | viewer
@@ -2936,7 +2936,7 @@ function showLoginError(msg) {
 </html>
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.6.2
+   INTERNAL TEST MODULE  v1.6.3
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    ============================================================ */
 
@@ -3252,7 +3252,7 @@ function renderTestHistory() {
   }).join('');
 }
 
-// ── Export PDF  v1.6.2
+// ── Export PDF  v1.6.3
 function exportTestPDF() {
   var mod = IT_MODULES[itCurrentMod];
   var allItems = mod.sections.flatMap(function(s){ return s.items; });
@@ -3343,7 +3343,7 @@ function exportTestPDF() {
     '.page-header { display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; margin-bottom:14px; border-bottom:3px solid #1e3a5f; }',
     '.header-left { display:flex; align-items:center; gap:14px; }',
     '.company-logo { width:60px; height:60px; object-fit:contain; }',
-    '.emerson-logo { height:44px; width:auto; object-fit:contain; }',
+    '.emerson-logo { height:64px; width:auto; object-fit:contain; }',
     '.doc-title { font-size:17px; font-weight:700; }',
     '.doc-sub { font-size:11px; color:#64748b; margin-top:2px; }',
     '.serials-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; margin-bottom:10px; display:grid; grid-template-columns:repeat(2,1fr); gap:5px 20px; }',
@@ -3416,7 +3416,7 @@ function exportTestPDF() {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.6.2
+   DATA MANAGEMENT MODULE  v1.6.3
    CRUD for Stock + Instruments → writes to Google Sheets
    ============================================================ */
 
