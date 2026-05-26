@@ -384,17 +384,13 @@ tbody tr:last-child td { border-bottom: none; }
 .analytics-card {
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 20px; overflow: hidden;
+  min-height: 280px;
 }
 .analytics-card h4 { font-size: 0.9rem; color: var(--text2); margin-bottom: 16px; }
 .analytics-card.span-2 { grid-column: span 2; }
 canvas { max-width: 100%; }
 
-.h-bar-chart { display: flex; flex-direction: column; gap: 10px; }
-.h-bar-row { display: flex; align-items: center; gap: 12px; }
-.h-bar-label { width: 180px; font-size: 0.82rem; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.h-bar-track { flex: 1; height: 10px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
-.h-bar-fill { height: 100%; border-radius: 5px; }
-.h-bar-val { width: 40px; text-align: right; font-family: var(--mono); font-size: 0.82rem; color: var(--text3); }
+/* h-bar-chart removed — now using Chart.js horizontal bar */
 
 /* ===== LOADING SPINNER ===== */
 .loading-spinner {
@@ -614,6 +610,87 @@ canvas { max-width: 100%; }
 .theme-toggle svg { width: 16px; height: 16px; transition: transform 0.4s ease; }
 .theme-toggle:hover svg { transform: rotate(20deg); }
 
+
+/* ===== LOGIN PAGE ===== */
+#loginPage {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 0;
+}
+.login-container {
+  width: 420px; max-width: 92vw;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.login-header {
+  padding: 32px 36px 24px;
+  background: linear-gradient(135deg, rgba(0,212,170,0.08), rgba(0,153,255,0.08));
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.login-logo {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px; color: #fff;
+}
+.login-logo svg { width: 26px; height: 26px; }
+.login-title { font-size: 1.4rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.login-sub { font-size: 0.82rem; color: var(--text3); }
+.login-body { padding: 28px 36px 32px; display: flex; flex-direction: column; gap: 16px; }
+.login-field { display: flex; flex-direction: column; gap: 6px; }
+.login-field label { font-size: 0.82rem; font-weight: 600; color: var(--text2); }
+.login-field input {
+  padding: 11px 14px; background: var(--bg3); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 0.92rem;
+  outline: none; transition: border-color 0.15s;
+}
+.login-field input:focus { border-color: var(--accent); }
+.login-btn {
+  width: 100%; padding: 12px; margin-top: 4px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: 8px; color: #fff;
+  font-family: var(--font); font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+}
+.login-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,170,0.3); }
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.login-error {
+  padding: 10px 14px; background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3);
+  border-radius: 8px; color: var(--danger); font-size: 0.84rem; text-align: center; display: none;
+}
+.login-footer {
+  text-align: center; padding: 0 36px 20px;
+  font-size: 0.72rem; color: var(--text3); font-family: var(--mono);
+}
+/* Role badges */
+.role-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.role-admin  { background: rgba(248,81,73,0.15); color: var(--danger); }
+.role-user   { background: rgba(0,153,255,0.15); color: var(--accent2); }
+.role-viewer { background: rgba(63,185,80,0.15); color: var(--success); }
+/* Header user info */
+.header-user {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; cursor: pointer; transition: all 0.15s;
+}
+.header-user:hover { border-color: var(--danger); }
+.header-user-name { font-size: 0.82rem; color: var(--text2); }
+.logout-icon { width: 14px; height: 14px; color: var(--text3); }
+/* Viewer restrictions */
+body.viewer-mode .btn-submit,
+body.viewer-mode #btnBorrow,
+body.viewer-mode #btnReturn,
+body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
+/* Light mode login */
+:root.light .login-btn { color: #fff; }
+
 /* ===== VERSION BADGE ===== */
 .version-badge {
   text-align: center;
@@ -634,9 +711,37 @@ canvas { max-width: 100%; }
 .ver-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; box-shadow:0 0 5px var(--accent); animation:pulse 2s infinite; }
 .ver-num { font-family:var(--mono); font-size:0.7rem; color:var(--text3); letter-spacing:0.3px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 </head>
 <body>
-<div id="app">
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+  <div class="login-container">
+    <div class="login-header">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke="currentColor" stroke-width="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2zM8 17v2a2 2 0 002 2h4a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+      <div class="login-title">MPS Stock</div>
+      <div class="login-sub">Management System — กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="login-body">
+      <div class="login-field">
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="ระบุ username" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="ระบุ password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
+    </div>
+    <div class="login-footer">MPS Department · v1.4.1</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-brand">
@@ -672,7 +777,7 @@ canvas { max-width: 100%; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.3.6</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.4.1</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -707,6 +812,11 @@ canvas { max-width: 100%; }
           <span class="last-sync" id="lastSync">—</span>
         </div>
         <div class="header-time" id="headerTime"></div>
+        <div class="header-user" id="headerUser" onclick="doLogout()" title="ออกจากระบบ" style="display:none">
+          <span class="role-badge role-admin" id="userRoleBadge">ADMIN</span>
+          <span class="header-user-name" id="userNameDisplay">—</span>
+          <svg class="logout-icon" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
       </div>
     </header>
 
@@ -1072,27 +1182,27 @@ canvas { max-width: 100%; }
       <div class="analytics-grid">
         <div class="analytics-card span-2">
           <h4>การยืมสินค้าตามเวลา (รายเดือน)</h4>
-          <canvas id="timelineChart" width="700" height="200"></canvas>
+          <canvas id="timelineChart" style="max-height:220px"></canvas>
         </div>
         <div class="analytics-card">
           <h4>สัดส่วนตามหมวดหมู่</h4>
-          <canvas id="categoryChart" width="300" height="250"></canvas>
+          <canvas id="categoryChart" style="max-height:240px"></canvas>
         </div>
         <div class="analytics-card">
           <h4>สถานะสต็อกทั้งหมด</h4>
-          <canvas id="stockStatusChart" width="300" height="250"></canvas>
+          <canvas id="stockStatusChart" style="max-height:240px"></canvas>
         </div>
         <div class="analytics-card span-2">
           <h4>Top 10 สินค้าที่เคลื่อนไหวมากที่สุด</h4>
-          <div class="h-bar-chart" id="topMovingChart"></div>
+          <canvas id="topMovingChart" style="max-height:280px"></canvas>
         </div>
         <div class="analytics-card">
           <h4>แนวโน้มสต็อก (Flow Computer)</h4>
-          <canvas id="trendFC" width="300" height="200"></canvas>
+          <canvas id="trendFC" style="max-height:180px"></canvas>
         </div>
         <div class="analytics-card">
           <h4>แนวโน้มสต็อก (Online GC)</h4>
-          <canvas id="trendGC" width="300" height="200"></canvas>
+          <canvas id="trendGC" style="max-height:180px"></canvas>
         </div>
       </div>
     </div>
@@ -1164,10 +1274,8 @@ let currentTab = 'warehouse';
 
 // ──────────── INIT ────────────
 document.addEventListener('DOMContentLoaded', () => {
-  initNavigation();
-  initDateTime();
   setDefaultDates();
-  loadAllData();
+  // initNavigation/loadAllData called after login in showDashboard()
   if (!cfg.sheetId) {
     setTimeout(() => {
       showToast('กรุณาตั้งค่า Google Sheets ID ด้วยปุ่ม ⚙️ ล่างซ้าย', 'info');
@@ -1772,231 +1880,284 @@ function generateReport() {
   document.getElementById('reportTableBody').innerHTML = logRows || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>';
 }
 
-// ──────────── ANALYTICS (Canvas Charts) ────────────
+// ──────────── ANALYTICS — Chart.js ────────────
+const CHART_COLORS = {
+  teal:   '#00d4aa', blue:   '#0099ff', orange: '#ff6b35',
+  green:  '#3fb950', yellow: '#f0ad4e', red:    '#f85149',
+  purple: '#9f7aea', pink:   '#ed64a6', cyan:   '#38b2ac', amber:  '#ed8936'
+};
+const COLOR_LIST = Object.values(CHART_COLORS);
+
+// Store chart instances to destroy before re-render
+const _charts = {};
+function getChart(id) { return _charts[id]; }
+function setChart(id, instance) {
+  if (_charts[id]) { try { _charts[id].destroy(); } catch(e){} }
+  _charts[id] = instance;
+}
+
+function chartDefaults() {
+  const isDark = !document.documentElement.classList.contains('light');
+  return {
+    gridColor:  isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)',
+    textColor:  isDark ? '#8b949e' : '#64748b',
+    fontFamily: "'IBM Plex Sans Thai', 'IBM Plex Mono', sans-serif",
+  };
+}
+
 function renderAnalytics() {
   drawTimelineChart();
   drawCategoryChart();
   drawStockStatusChart();
   drawTopMovingChart();
-  drawTrendChart('trendFC', 'flow', '#00d4aa');
-  drawTrendChart('trendGC', 'gc', '#0099ff');
+  drawTrendChart('trendFC', 'flow', CHART_COLORS.teal);
+  drawTrendChart('trendGC', 'gc',   CHART_COLORS.blue);
 }
 
+// ── Timeline: borrows per month (bar + line)
 function drawTimelineChart() {
-  const canvas = document.getElementById('timelineChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.parentElement.clientWidth - 40 || 700;
-  const H = 200;
-  canvas.width = W; canvas.height = H;
+  const el = document.getElementById('timelineChart');
+  if (!el) return;
+  const d = chartDefaults();
 
-  // Group borrows by month (last 6 months)
   const months = [];
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(); d.setMonth(d.getMonth() - i);
-    months.push({ label: d.toLocaleDateString('th-TH', {month:'short',year:'2-digit'}), key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` });
+    const dt = new Date(); dt.setMonth(dt.getMonth() - i);
+    months.push({
+      label: dt.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' }),
+      key:   `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`
+    });
   }
-  const data = months.map(m => allBorrow.filter(b => b.borrowDate?.startsWith(m.key)).length);
-  const maxV = Math.max(...data, 1);
+  const borrowCounts  = months.map(m => allBorrow.filter(b => b.borrowDate?.startsWith(m.key)).length);
+  const returnCounts  = months.map(m => allBorrow.filter(b => b.returnDate?.startsWith(m.key)).length);
 
-  const pad = { l:40, r:20, t:20, b:40 };
-  const cW = W - pad.l - pad.r;
-  const cH = H - pad.t - pad.b;
-  const step = cW / (months.length - 1);
-
-  ctx.clearRect(0,0,W,H);
-
-  // Grid lines
-  ctx.strokeStyle = '#30363d'; ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = pad.t + (cH / 4) * i;
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
-  }
-
-  // Area fill
-  const pts = data.map((v,i) => ({ x: pad.l + i*step, y: pad.t + cH - (v/maxV)*cH }));
-  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
-  grad.addColorStop(0, 'rgba(0,212,170,0.25)');
-  grad.addColorStop(1, 'rgba(0,212,170,0)');
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, H - pad.b);
-  pts.forEach(p => ctx.lineTo(p.x, p.y));
-  ctx.lineTo(pts[pts.length-1].x, H - pad.b);
-  ctx.closePath();
-  ctx.fillStyle = grad; ctx.fill();
-
-  // Line
-  ctx.beginPath(); ctx.strokeStyle = '#00d4aa'; ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  pts.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y));
-  ctx.stroke();
-
-  // Dots + labels
-  pts.forEach((p,i) => {
-    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
-    ctx.fillStyle = '#00d4aa'; ctx.fill();
-    ctx.fillStyle = '#8b949e'; ctx.font = '11px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
-    ctx.fillText(months[i].label, p.x, H - pad.b + 16);
-    if (data[i] > 0) {
-      ctx.fillStyle = '#e6edf3';
-      ctx.fillText(data[i], p.x, p.y - 8);
+  setChart('timeline', new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: months.map(m => m.label),
+      datasets: [
+        {
+          label: 'ยืม',
+          data: borrowCounts,
+          backgroundColor: CHART_COLORS.teal + 'cc',
+          borderColor: CHART_COLORS.teal,
+          borderWidth: 1.5,
+          borderRadius: 6,
+          borderSkipped: false,
+        },
+        {
+          label: 'คืน',
+          data: returnCounts,
+          backgroundColor: CHART_COLORS.blue + 'cc',
+          borderColor: CHART_COLORS.blue,
+          borderWidth: 1.5,
+          borderRadius: 6,
+          borderSkipped: false,
+          type: 'line',
+          tension: 0.4,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBackgroundColor: CHART_COLORS.blue,
+          fill: false,
+          yAxisID: 'y',
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: d.textColor, font: { family: d.fontFamily, size: 12 }, boxWidth: 14, padding: 20 } },
+        tooltip: { backgroundColor: '#1c2230', titleColor: '#e6edf3', bodyColor: '#8b949e', borderColor: '#30363d', borderWidth: 1, padding: 12, cornerRadius: 8 },
+        datalabels: { display: false }
+      },
+      scales: {
+        x: { grid: { color: d.gridColor }, ticks: { color: d.textColor, font: { family: d.fontFamily } } },
+        y: { grid: { color: d.gridColor }, ticks: { color: d.textColor, font: { family: d.fontFamily }, precision: 0 }, beginAtZero: true }
+      }
     }
-  });
+  }));
 }
 
+// ── Category donut chart
 function drawCategoryChart() {
-  const canvas = document.getElementById('categoryChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  canvas.width = 280; canvas.height = 220;
-
+  const el = document.getElementById('categoryChart');
+  if (!el) return;
+  const d = chartDefaults();
   const counts = { flow: 0, gc: 0, acc: 0 };
   allStock.forEach(i => { if (counts[i.category] !== undefined) counts[i.category]++; });
-  const data = [counts.flow, counts.gc, counts.acc];
-  const colors = ['#00d4aa','#0099ff','#ff6b35'];
-  const labels = ['Flow Computer','Online GC','Accessories'];
-  const total = data.reduce((a,b) => a+b, 0) || 1;
 
-  const cx = 110, cy = 105, r = 80;
-  let startAngle = -Math.PI / 2;
-  ctx.clearRect(0,0,280,220);
-
-  data.forEach((v,i) => {
-    const angle = (v/total) * Math.PI * 2;
-    ctx.beginPath(); ctx.moveTo(cx,cy);
-    ctx.arc(cx, cy, r, startAngle, startAngle + angle);
-    ctx.fillStyle = colors[i]; ctx.fill();
-    ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 2; ctx.stroke();
-    startAngle += angle;
-  });
-  // Center hole
-  ctx.beginPath(); ctx.arc(cx,cy,46,0,Math.PI*2);
-  ctx.fillStyle = '#161b22'; ctx.fill();
-  ctx.fillStyle = '#e6edf3'; ctx.font = 'bold 18px IBM Plex Mono'; ctx.textAlign = 'center';
-  ctx.fillText(total, cx, cy+4);
-  ctx.fillStyle = '#8b949e'; ctx.font = '10px IBM Plex Sans Thai'; ctx.fillText('รายการ',cx,cy+18);
-
-  // Legend
-  data.forEach((v,i) => {
-    const lx = 200, ly = 50 + i*40;
-    ctx.fillStyle = colors[i];
-    ctx.fillRect(lx, ly, 12, 12);
-    ctx.fillStyle = '#8b949e'; ctx.font = '10px IBM Plex Sans Thai'; ctx.textAlign = 'left';
-    ctx.fillText(labels[i], lx+16, ly+10);
-    ctx.fillStyle = '#e6edf3'; ctx.font = 'bold 12px IBM Plex Mono';
-    ctx.fillText(v, lx+16, ly+24);
-  });
+  setChart('category', new Chart(el, {
+    type: 'doughnut',
+    data: {
+      labels: ['Flow Computer', 'Online GC', 'Accessories'],
+      datasets: [{
+        data: [counts.flow, counts.gc, counts.acc],
+        backgroundColor: [CHART_COLORS.teal + 'dd', CHART_COLORS.blue + 'dd', CHART_COLORS.orange + 'dd'],
+        borderColor: [CHART_COLORS.teal, CHART_COLORS.blue, CHART_COLORS.orange],
+        borderWidth: 2,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: d.textColor, font: { family: d.fontFamily, size: 11 }, padding: 16, boxWidth: 12, usePointStyle: true } },
+        tooltip: { backgroundColor: '#1c2230', titleColor: '#e6edf3', bodyColor: '#8b949e', borderColor: '#30363d', borderWidth: 1, padding: 10, cornerRadius: 8 },
+        datalabels: {
+          color: '#fff', font: { weight: 'bold', size: 13, family: d.fontFamily },
+          formatter: (val, ctx) => val > 0 ? val : '',
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  }));
 }
 
+// ── Stock status donut
 function drawStockStatusChart() {
-  const canvas = document.getElementById('stockStatusChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  canvas.width = 280; canvas.height = 220;
-
+  const el = document.getElementById('stockStatusChart');
+  if (!el) return;
+  const d = chartDefaults();
   const ok  = allStock.filter(i => getStatus(i) === 'ok').length;
   const low = allStock.filter(i => getStatus(i) === 'low').length;
   const out = allStock.filter(i => getStatus(i) === 'out').length;
-  const data = [ok, low, out];
-  const colors = ['#3fb950','#f0ad4e','#f85149'];
-  const labels = ['พร้อมใช้','ต่ำกว่าเกณฑ์','หมด'];
-  const total = data.reduce((a,b)=>a+b,0) || 1;
 
-  const cx = 110, cy = 105, r = 80;
-  let sa = -Math.PI/2;
-  ctx.clearRect(0,0,280,220);
-  data.forEach((v,i) => {
-    if (!v) return;
-    const angle = (v/total)*Math.PI*2;
-    ctx.beginPath(); ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,r,sa,sa+angle);
-    ctx.fillStyle = colors[i]; ctx.fill();
-    ctx.strokeStyle='#0d1117'; ctx.lineWidth=2; ctx.stroke();
-    sa += angle;
-  });
-  ctx.beginPath(); ctx.arc(cx,cy,46,0,Math.PI*2);
-  ctx.fillStyle='#161b22'; ctx.fill();
-  ctx.fillStyle='#e6edf3'; ctx.font='bold 18px IBM Plex Mono'; ctx.textAlign='center';
-  ctx.fillText(total, cx, cy+4);
-  ctx.fillStyle='#8b949e'; ctx.font='10px IBM Plex Sans Thai'; ctx.fillText('รายการ',cx,cy+18);
-
-  data.forEach((v,i) => {
-    const lx=200, ly=40+i*44;
-    ctx.fillStyle=colors[i]; ctx.fillRect(lx,ly,12,12);
-    ctx.fillStyle='#8b949e'; ctx.font='10px IBM Plex Sans Thai'; ctx.textAlign='left';
-    ctx.fillText(labels[i],lx+16,ly+10);
-    ctx.fillStyle='#e6edf3'; ctx.font='bold 12px IBM Plex Mono';
-    ctx.fillText(v,lx+16,ly+24);
-  });
+  setChart('stockStatus', new Chart(el, {
+    type: 'doughnut',
+    data: {
+      labels: ['พร้อมใช้', 'ต่ำกว่าเกณฑ์', 'หมด'],
+      datasets: [{
+        data: [ok, low, out],
+        backgroundColor: [CHART_COLORS.green + 'dd', CHART_COLORS.yellow + 'dd', CHART_COLORS.red + 'dd'],
+        borderColor: [CHART_COLORS.green, CHART_COLORS.yellow, CHART_COLORS.red],
+        borderWidth: 2,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: d.textColor, font: { family: d.fontFamily, size: 11 }, padding: 16, boxWidth: 12, usePointStyle: true } },
+        tooltip: { backgroundColor: '#1c2230', titleColor: '#e6edf3', bodyColor: '#8b949e', borderColor: '#30363d', borderWidth: 1, padding: 10, cornerRadius: 8 },
+        datalabels: {
+          color: '#fff', font: { weight: 'bold', size: 13, family: d.fontFamily },
+          formatter: (val) => val > 0 ? val : '',
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  }));
 }
 
+// ── Top 10 horizontal bar
 function drawTopMovingChart() {
-  const container = document.getElementById('topMovingChart');
-  if (!container) return;
+  const el = document.getElementById('topMovingChart');
+  if (!el) return;
+  const d = chartDefaults();
+
   const counts = {};
   allBorrow.forEach(b => { counts[b.itemName] = (counts[b.itemName]||0) + parseInt(b.qty||1); });
   const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const maxV = top[0]?.[1] || 1;
-  const colors = ['#00d4aa','#0099ff','#ff6b35','#3fb950','#f0ad4e','#f85149','#9f7aea','#ed64a6','#38b2ac','#ed8936'];
-  container.innerHTML = top.map(([name,v],i) => `
-    <div class="h-bar-row">
-      <span class="h-bar-label" title="${name}">${i+1}. ${name}</span>
-      <div class="h-bar-track"><div class="h-bar-fill" style="width:${v/maxV*100}%;background:${colors[i]}"></div></div>
-      <span class="h-bar-val">${v}</span>
-    </div>`).join('');
+  const labels = top.map(([n]) => n.length > 28 ? n.slice(0,26)+'…' : n);
+  const values = top.map(([,v]) => v);
+
+  setChart('topMoving', new Chart(el, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'จำนวนครั้ง',
+        data: values,
+        backgroundColor: COLOR_LIST.slice(0,10).map(c => c + 'cc'),
+        borderColor:     COLOR_LIST.slice(0,10),
+        borderWidth: 1.5,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#1c2230', titleColor: '#e6edf3', bodyColor: '#8b949e', borderColor: '#30363d', borderWidth: 1, padding: 10, cornerRadius: 8 },
+        datalabels: {
+          anchor: 'end', align: 'end',
+          color: d.textColor, font: { family: d.fontFamily, size: 11, weight: '600' },
+          formatter: v => v,
+        }
+      },
+      scales: {
+        x: { grid: { color: d.gridColor }, ticks: { color: d.textColor, font: { family: d.fontFamily }, precision: 0 }, beginAtZero: true },
+        y: { grid: { display: false }, ticks: { color: d.textColor, font: { family: d.fontFamily, size: 11 } } }
+      }
+    },
+    plugins: [ChartDataLabels]
+  }));
 }
 
+// ── Trend line chart per category
 function drawTrendChart(canvasId, cat, color) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.parentElement.clientWidth - 40 || 300;
-  const H = 160;
-  canvas.width = W; canvas.height = H;
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  const d = chartDefaults();
 
-  // Simulate stock trend for last 6 months based on borrow data
   const catItems = allStock.filter(i => i.category === cat);
-  const totalNow = catItems.reduce((a,i) => a+parseInt(i.qty||0),0);
-  const months = 6;
+  const totalNow = catItems.reduce((a,i) => a+parseInt(i.qty||0), 0);
+  const monthLabels = [];
   const pts = [];
-  for (let i = months; i >= 0; i--) {
-    const d = new Date(); d.setMonth(d.getMonth()-i);
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const borrowed = allBorrow.filter(b => b.borrowDate?.startsWith(key) && catItems.some(ci => ci.id===b.itemId))
-                               .reduce((a,b) => a+parseInt(b.qty||0),0);
-    pts.push(totalNow + borrowed * (i+1) * 0.3 | 0);
+
+  for (let i = 5; i >= 0; i--) {
+    const dt = new Date(); dt.setMonth(dt.getMonth()-i);
+    monthLabels.push(dt.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' }));
+    const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+    const borrowed = allBorrow
+      .filter(b => b.borrowDate?.startsWith(key) && catItems.some(ci => ci.id===b.itemId))
+      .reduce((a,b) => a+parseInt(b.qty||0), 0);
+    pts.push(Math.max(0, totalNow + borrowed * (i+1) * 0.3 | 0));
   }
-  pts[months] = totalNow;
+  pts[5] = totalNow;
 
-  const maxV = Math.max(...pts, 1);
-  const pad = {l:36,r:10,t:16,b:30};
-  const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
-  ctx.clearRect(0,0,W,H);
+  const grad = el.getContext('2d').createLinearGradient(0,0,0,160);
+  grad.addColorStop(0, color + '40');
+  grad.addColorStop(1, color + '05');
 
-  ctx.strokeStyle='#30363d'; ctx.lineWidth=1;
-  for (let i=0;i<=3;i++) {
-    const y=pad.t+(cH/3)*i;
-    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
-    ctx.fillStyle='#58626d'; ctx.font='9px IBM Plex Mono'; ctx.textAlign='right';
-    ctx.fillText(Math.round(maxV*(3-i)/3), pad.l-4, y+3);
-  }
-
-  const coords = pts.map((v,i)=>({ x:pad.l+i*(cW/(months)), y:pad.t+cH-(v/maxV)*cH }));
-  const grad = ctx.createLinearGradient(0,pad.t,0,H-pad.b);
-  grad.addColorStop(0, color+'40'); grad.addColorStop(1, color+'05');
-  ctx.beginPath(); ctx.moveTo(coords[0].x,H-pad.b);
-  coords.forEach(p=>ctx.lineTo(p.x,p.y));
-  ctx.lineTo(coords[coords.length-1].x,H-pad.b);
-  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
-
-  ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineJoin='round';
-  coords.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
-  ctx.stroke();
-
-  coords.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fillStyle=color; ctx.fill(); });
+  setChart(canvasId, new Chart(el, {
+    type: 'line',
+    data: {
+      labels: monthLabels,
+      datasets: [{
+        label: cat === 'flow' ? 'Flow Computer' : 'Online GC',
+        data: pts,
+        borderColor: color,
+        borderWidth: 2.5,
+        pointBackgroundColor: color,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        tension: 0.4,
+        fill: true,
+        backgroundColor: grad,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#1c2230', titleColor: '#e6edf3', bodyColor: '#8b949e', borderColor: '#30363d', borderWidth: 1, padding: 10, cornerRadius: 8 },
+        datalabels: { display: false }
+      },
+      scales: {
+        x: { grid: { color: d.gridColor }, ticks: { color: d.textColor, font: { family: d.fontFamily, size: 10 } } },
+        y: { grid: { color: d.gridColor }, ticks: { color: d.textColor, font: { family: d.fontFamily, size: 10 }, precision: 0 }, beginAtZero: false }
+      }
+    }
+  }));
 }
 
-// ──────────── EXPORT ────────────
+
 function exportCSV() {
   const headers = ['รหัสสินค้า','ชื่อสินค้า','หมวดหมู่','Part No.','ยี่ห้อ','คงเหลือ','Min Stock','หน่วย','สถานะ','ที่เก็บ'];
   const catLabel = { flow:'Flow Computer', gc:'Online GC', acc:'Accessories' };
@@ -2313,10 +2474,8 @@ function toggleTheme() {
   const icon = document.getElementById('themeIcon');
   if (icon) icon.innerHTML = isLight ? SUN_ICON : MOON_ICON;
   localStorage.setItem('mps_theme', isLight ? 'light' : 'dark');
-  // Redraw canvas charts after theme switch
-  setTimeout(() => {
-    if (currentTab === 'analytics') renderAnalytics();
-  }, 50);
+  // Redraw charts after theme switch
+  setTimeout(() => { renderAnalytics(); }, 80);
 }
 
 function initTheme() {
@@ -2329,7 +2488,158 @@ function initTheme() {
 }
 
 // Call on load
-document.addEventListener('DOMContentLoaded', initTheme);
+// initTheme called in showDashboard
+
+
+/* ============================================================
+   AUTH / LOGIN SYSTEM  v1.4.1
+   Users stored in Google Sheets → sheet "Users"
+   Columns: username | password | role | name | active
+   Roles: admin | user | viewer
+   ============================================================ */
+
+let currentUser = null;
+
+// ── Check saved session on load
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('mps_session');
+  if (saved) {
+    try {
+      const sess = JSON.parse(saved);
+      if (sess && sess.username && sess.role) {
+        currentUser = sess;
+        showDashboard();
+        return;
+      }
+    } catch(e) {}
+  }
+  // No session — show login
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  setTimeout(() => document.getElementById('loginUser').focus(), 100);
+});
+
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+
+  if (!username || !password) {
+    showLoginError('กรุณากรอก username และ password');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'กำลังตรวจสอบ...';
+  err.style.display = 'none';
+
+  try {
+    // Try GAS auth first if configured
+    if (cfg.gasUrl) {
+      const params = new URLSearchParams({ action: 'login', username, password, sheetId: cfg.sheetId });
+      await fetch(cfg.gasUrl + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+    }
+
+    // Also check local users sheet data
+    const user = await verifyUser(username, password);
+    if (user) {
+      currentUser = { username: user.username, name: user.name || user.username, role: user.role || 'viewer' };
+      localStorage.setItem('mps_session', JSON.stringify(currentUser));
+      showDashboard();
+    } else {
+      showLoginError('Username หรือ Password ไม่ถูกต้อง');
+      btn.disabled = false;
+      btn.textContent = 'เข้าสู่ระบบ';
+    }
+  } catch(e) {
+    showLoginError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+    btn.disabled = false;
+    btn.textContent = 'เข้าสู่ระบบ';
+  }
+}
+
+async function verifyUser(username, password) {
+  // 1. Try from Sheets (Users sheet)
+  if (cfg.sheetId) {
+    try {
+      const users = await gSheetCSV('Users');
+      if (users.length) {
+        const u = users.find(r =>
+          (r.username||'').toLowerCase() === username.toLowerCase() &&
+          (r.password||'') === password &&
+          (r.active||'true').toLowerCase() !== 'false'
+        );
+        if (u) return u;
+        if (users.length > 0) return null; // Sheet exists but no match
+      }
+    } catch(e) {}
+  }
+  // 2. Fallback demo users (if no Sheets configured)
+  const demo = [
+    { username:'admin',  password:'admin123',  role:'admin',  name:'Administrator' },
+    { username:'user1',  password:'user123',   role:'user',   name:'MPS User' },
+    { username:'viewer', password:'view123',   role:'viewer', name:'Viewer' },
+  ];
+  return demo.find(u => u.username === username && u.password === password) || null;
+}
+
+function showDashboard() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  // Apply role
+  const role = currentUser.role || 'viewer';
+  document.body.classList.remove('admin-mode','user-mode','viewer-mode');
+  document.body.classList.add(role + '-mode');
+
+  // Show user info in header
+  const userEl = document.getElementById('headerUser');
+  const nameEl = document.getElementById('userNameDisplay');
+  const badgeEl = document.getElementById('userRoleBadge');
+  if (userEl) userEl.style.display = 'flex';
+  if (nameEl) nameEl.textContent = currentUser.name || currentUser.username;
+  if (badgeEl) {
+    badgeEl.textContent = role.toUpperCase();
+    badgeEl.className = 'role-badge role-' + role;
+  }
+
+  // Restrict viewer
+  if (role === 'viewer') {
+    document.body.classList.add('viewer-mode');
+    showToast(`ยินดีต้อนรับ ${currentUser.name} (Viewer — ดูข้อมูลได้อย่างเดียว)`, 'info');
+  } else {
+    showToast(`ยินดีต้อนรับ ${currentUser.name} (${role.toUpperCase()})`, 'success');
+  }
+
+  // Load data
+  initNavigation();
+  initDateTime();
+  initTheme();
+  loadAllData();
+}
+
+function doLogout() {
+  if (!confirm('ต้องการออกจากระบบใช่หรือไม่?')) return;
+  localStorage.removeItem('mps_session');
+  currentUser = null;
+  document.body.classList.remove('admin-mode','user-mode','viewer-mode');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').textContent = 'เข้าสู่ระบบ';
+  document.getElementById('headerUser').style.display = 'none';
+}
+
+function showLoginError(msg) {
+  const err = document.getElementById('loginError');
+  err.textContent = msg;
+  err.style.display = 'block';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginPass').focus();
+}
 
 </script>
 </body>
