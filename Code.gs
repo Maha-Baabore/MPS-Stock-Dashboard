@@ -39,7 +39,14 @@ function doGet(e) {
     else if (data.action === 'updateReturn') result = updateReturn(data);
     else if (data.action === 'login')        result = verifyLogin(data);
     else if (data.action === 'updateStock')  result = updateStockItem(data);
-    else if (data.action === 'addTestHistory') result = addTestHistory(data);
+    else if (data.action === 'updateStockItem') result = updateStockRow(data);
+    else if (data.action === 'addTestHistory')  result = addTestHistory(data);
+    else if (data.action === 'addStockItem')    result = addStockItem(data);
+    else if (data.action === 'updateStockRow')  result = updateStockRow(data);
+    else if (data.action === 'deleteStockItem') result = deleteStockItem(data);
+    else if (data.action === 'addInstrument')   result = addInstrument(data);
+    else if (data.action === 'updateInstrument')result = updateInstrument(data);
+    else if (data.action === 'deleteInstrument')result = deleteInstrument(data);
     else                                     result = { ok: false, msg: 'Unknown action: ' + data.action };
 
     res.setContent(JSON.stringify(result));
@@ -208,4 +215,140 @@ function ensureHeader(sheet, cols) {
     sheet.insertRowBefore(1);
     sheet.getRange(1, 1, 1, cols.length).setValues([cols]);
   }
+}
+
+// ──────────── STOCK CRUD ────────────
+function addStockItem(data) {
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheet = ss.getSheetByName(data.stockSheet || 'Stock');
+    if (!sheet) return { ok:false, msg:'Stock sheet not found' };
+    const COLS = ['id','name','category','partNo','brand','qty','minQty','unit','location','status'];
+    ensureHeader(sheet, COLS);
+    // Check duplicate
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const idIdx = headers.indexOf('id');
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]).trim() === String(data.id).trim())
+        return { ok:false, msg:'Duplicate ID: ' + data.id };
+    }
+    sheet.appendRow(COLS.map(c => data[c] || ''));
+    return { ok:true, msg:'addStockItem success' };
+  } catch(e) { return { ok:false, msg:e.toString() }; }
+}
+
+function updateStockRow(data) {
+  // Full row update (not just qty delta)
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheet = ss.getSheetByName(data.stockSheet || 'Stock');
+    if (!sheet) return { ok:false, msg:'Stock sheet not found' };
+    const COLS = ['id','name','category','partNo','brand','qty','minQty','unit','location','status'];
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const idIdx = headers.indexOf('id');
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
+        const newRow = COLS.map(c => {
+          const hi = headers.indexOf(c.toLowerCase());
+          return data[c] !== undefined ? data[c] : (hi >= 0 ? rows[i][hi] : '');
+        });
+        sheet.getRange(i+1, 1, 1, newRow.length).setValues([newRow]);
+        return { ok:true, msg:'updateStockRow success' };
+      }
+    }
+    return { ok:false, msg:'Item not found: ' + data.id };
+  } catch(e) { return { ok:false, msg:e.toString() }; }
+}
+
+function deleteStockItem(data) {
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheet = ss.getSheetByName(data.stockSheet || 'Stock');
+    if (!sheet) return { ok:false, msg:'Stock sheet not found' };
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const idIdx = headers.indexOf('id');
+    for (let i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
+        sheet.deleteRow(i + 1);
+        return { ok:true, msg:'deleteStockItem success' };
+      }
+    }
+    return { ok:false, msg:'Item not found: ' + data.id };
+  } catch(e) { return { ok:false, msg:e.toString() }; }
+}
+
+// ──────────── INSTRUMENTS CRUD ────────────
+const INST_COLS = ['id','name','owner','mfr','model','sn','range','tol','freq','type','expiry','remark'];
+
+function addInstrument(data) {
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
+    if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
+    ensureHeader(sheet, INST_COLS);
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const idIdx = headers.indexOf('id');
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]).trim() === String(data.id).trim())
+        return { ok:false, msg:'Duplicate ID: ' + data.id };
+    }
+    sheet.appendRow(INST_COLS.map(c => data[c] || ''));
+    return { ok:true, msg:'addInstrument success' };
+  } catch(e) { return { ok:false, msg:e.toString() }; }
+}
+
+function updateInstrument(data) {
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
+    if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const idIdx = headers.indexOf('id');
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
+        const newRow = INST_COLS.map(c => {
+          const hi = headers.indexOf(c.toLowerCase());
+          return data[c] !== undefined ? data[c] : (hi >= 0 ? rows[i][hi] : '');
+        });
+        sheet.getRange(i+1, 1, 1, newRow.length).setValues([newRow]);
+        return { ok:true, msg:'updateInstrument success' };
+      }
+    }
+    return { ok:false, msg:'Instrument not found: ' + data.id };
+  } catch(e) { return { ok:false, msg:e.toString() }; }
+}
+
+function deleteInstrument(data) {
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
+    if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const idIdx = headers.indexOf('id');
+    for (let i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
+        sheet.deleteRow(i + 1);
+        return { ok:true, msg:'deleteInstrument success' };
+      }
+    }
+    return { ok:false, msg:'Instrument not found: ' + data.id };
+  } catch(e) { return { ok:false, msg:e.toString() }; }
+}
+
+// ──────────── TEST HISTORY ────────────
+function addTestHistory(data) {
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheet = ss.getSheetByName('TestHistory') || ss.insertSheet('TestHistory');
+    const COLS  = ['testId','date','module','serialNumbers','tester','passCount','failCount','total','overall'];
+    ensureHeader(sheet, COLS);
+    sheet.appendRow(COLS.map(c => data[c] || ''));
+    return { ok:true, msg:'addTestHistory success' };
+  } catch(e) { return { ok:false, msg:e.toString() }; }
 }
