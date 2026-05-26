@@ -1,5 +1,5 @@
 // ============================================================
-//  MPS Stock — Google Apps Script Backend  v1.4.0
+//  MPS Stock — Google Apps Script Backend  v1.5.1
 //  วิธีติดตั้ง:
 //  1. เปิด Google Sheets → Extensions → Apps Script
 //  2. วางโค้ดนี้ทั้งหมดแทนที่โค้ดเดิม → Save (Ctrl+S)
@@ -51,6 +51,60 @@ function doGet() {
   ).setMimeType(ContentService.MimeType.JSON);
 }
 
+
+
+// ── เพิ่ม/อัปเดต stock item จาก Internal Test
+function updateStockItem(data) {
+  try {
+    const ss    = getSpreadsheet(data);
+    const sheetName = data.stockSheet || 'Stock';
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return { ok: false, msg: `Sheet "${sheetName}" not found` };
+
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const idIdx  = headers.findIndex(h => h === 'id');
+    const qtyIdx = headers.findIndex(h => h === 'qty');
+    const nameIdx = headers.findIndex(h => h === 'name');
+    if (idIdx < 0 || qtyIdx < 0) return { ok: false, msg: 'Missing id/qty columns' };
+
+    const delta = parseInt(data.delta || 1);
+
+    // Find existing row
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
+        const cur = parseInt(rows[i][qtyIdx] || 0);
+        sheet.getRange(i + 1, qtyIdx + 1).setValue(Math.max(0, cur + delta));
+        return { ok: true, msg: `Updated ${data.id} qty +${delta}` };
+      }
+    }
+
+    // Not found — append new row
+    const STOCK_COLS = ['id','name','category','partNo','brand','qty','minQty','unit','location','status'];
+    if (sheet.getLastRow() <= 1) {
+      // ensure header
+      const headerRow = rows[0].join(',').toLowerCase();
+      if (!headerRow.includes('id')) {
+        sheet.getRange(1, 1, 1, STOCK_COLS.length).setValues([STOCK_COLS]);
+      }
+    }
+    const newRow = STOCK_COLS.map(col => {
+      if (col === 'id')       return data.id || '';
+      if (col === 'name')     return data.name || '';
+      if (col === 'category') return data.category || 'flow';
+      if (col === 'brand')    return data.brand || 'Emerson';
+      if (col === 'qty')      return String(delta);
+      if (col === 'minQty')   return '1';
+      if (col === 'unit')     return data.unit || 'ชิ้น';
+      if (col === 'status')   return 'ok';
+      return '';
+    });
+    sheet.appendRow(newRow);
+    return { ok: true, msg: `Added new stock item ${data.id}` };
+  } catch(e) {
+    return { ok: false, msg: e.toString() };
+  }
+}
 
 // ── ตรวจสอบ login จาก sheet Users
 function verifyLogin(data) {
