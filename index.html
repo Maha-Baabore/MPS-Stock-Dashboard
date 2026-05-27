@@ -887,7 +887,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.7.1</div>
+    <div class="login-footer">MPS Department · v1.7.2</div>
   </div>
 </div>
 
@@ -935,7 +935,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.7.1</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.7.2</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -2793,7 +2793,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.7.1
+   AUTH / LOGIN SYSTEM  v1.7.2
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    Roles: admin | user | viewer
@@ -2947,7 +2947,7 @@ function showLoginError(msg) {
 </html>
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.7.1
+   INTERNAL TEST MODULE  v1.7.2
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    ============================================================ */
 
@@ -3324,7 +3324,7 @@ function clearTestHistory() {
   showToast('🗑️ ล้างประวัติการทดสอบทั้งหมดแล้ว', 'success');
 }
 
-// ── Export PDF  v1.7.1
+// ── Export PDF  v1.7.2
 function exportTestPDF() {
   var mod = IT_MODULES[itCurrentMod];
   var allItems = mod.sections.flatMap(function(s){ return s.items; });
@@ -3529,7 +3529,7 @@ function exportTestPDF() {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.7.1
+   DATA MANAGEMENT MODULE  v1.7.2
    CRUD for Stock + Instruments → writes to Google Sheets
    ============================================================ */
 
@@ -3570,7 +3570,6 @@ function renderDMTable(type) {
         <td style="color:var(--text3)">${item.minQty||0}</td>
         <td>${item.unit||''}</td>
         <td style="color:var(--text3)">${item.location||'—'}</td>
-        <td>
         <td style="white-space:nowrap">
           <button class="dm-edit-btn" onclick="openDMModal('stock','edit',${idx})" title="แก้ไข">
             <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -3597,7 +3596,6 @@ function renderDMTable(type) {
         <td style="font-size:0.82rem">${inst.range||''}</td>
         <td style="font-family:var(--mono);font-size:0.8rem">${inst.expiry||'—'}</td>
         <td><span class="badge ${stCls}">${stTh}</span></td>
-        <td>
         <td style="white-space:nowrap">
           <button class="dm-edit-btn" onclick="openDMModal('instruments','edit',${idx})" title="แก้ไข">
             <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
