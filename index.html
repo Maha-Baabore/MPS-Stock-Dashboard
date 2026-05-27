@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System</title>
+<title>MPS Stock Management System v1.8.0</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -887,7 +887,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.7.2</div>
+    <div class="login-footer">MPS Department · v1.8.0</div>
   </div>
 </div>
 
@@ -935,7 +935,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.7.2</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.8.0</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -958,7 +958,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="header-right">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input type="text" id="globalSearch" placeholder="ค้นหาสินค้า..." onkeyup="handleSearch(this.value)">
+          <input type="text" id="globalSearch" placeholder="ค้นหาสินค้า...">
         </div>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="เปลี่ยนธีม">
           <svg id="themeIcon" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1288,7 +1288,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
           </select>
           <div class="search-box" style="flex:1">
             <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <input type="text" id="instSearch" placeholder="ค้นหาชื่อ / รหัส / Model..." oninput="renderInstruments()">
+            <input type="text" id="instSearch" placeholder="ค้นหาชื่อ / รหัส / Model...">
           </div>
           <button class="btn-export" onclick="exportInstrumentsCSV()">
             <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1536,8 +1536,9 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System — app.js
+   MPS Stock Management System v1.8.0 — app.js
    Google Sheets (CSV export) → Dashboard
+   Security: XSS escaped, role guards, session expiry
    ============================================================ */
 
 // ──────────── CONFIG ────────────
@@ -1551,16 +1552,53 @@ const DEFAULT_CONFIG = {
 
 let cfg = loadConfig();
 
+// ──────────── SECURITY HELPERS ────────────
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function requireRole() {
+  var allowedRoles = Array.prototype.slice.call(arguments);
+  if (!currentUser) { showToast('กรุณาเข้าสู่ระบบ', 'error'); return false; }
+  if (!allowedRoles.includes(currentUser.role)) {
+    showToast('คุณไม่มีสิทธิ์ดำเนินการนี้', 'error');
+    return false;
+  }
+  return true;
+}
+
+// ──────────── PERFORMANCE HELPERS ────────────
+function debounce(fn, ms) {
+  var timer;
+  return function() {
+    var args = arguments;
+    clearTimeout(timer);
+    timer = setTimeout(function() { fn.apply(null, args); }, ms);
+  };
+}
+
 // ──────────── STATE ────────────
 let allStock   = [];   // raw stock data from Sheets
 let allBorrow  = [];   // raw borrow/return log from Sheets
 let allInstruments = []; // raw instruments from Sheets
 let currentCat = 'all';
 let currentTab = 'warehouse';
+let isLoading  = false;
 
 // ──────────── INIT ────────────
 document.addEventListener('DOMContentLoaded', () => {
   setDefaultDates();
+  // Wire debounced search inputs
+  const gs = document.getElementById('globalSearch');
+  if (gs) gs.addEventListener('input', debounce(e => handleSearch(e.target.value), 200));
+  const is = document.getElementById('instSearch');
+  if (is) is.addEventListener('input', debounce(() => renderInstruments(), 200));
   // initNavigation/loadAllData called after login in showDashboard()
   if (!cfg.sheetId) {
     setTimeout(() => {
@@ -1663,7 +1701,7 @@ function normaliseKey(raw) {
 
 function parseCSV(text) {
   const rows = [];
-  const lines = text.split('\n').filter(l => l.trim());
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (!lines.length) return rows;
 
   const rawHeaders = splitCSVLine(lines[0]).map(h => h.replace(/^"|"$/g,'').trim());
@@ -1702,30 +1740,53 @@ function splitCSVLine(line) {
 
 // ──────────── LOAD ALL DATA ────────────
 async function loadAllData() {
+  if (isLoading) return; // race-condition guard
+  isLoading = true;
   setSyncStatus('loading');
 
-  // If no sheetId, use demo data
+  let usingDemo = false;
+
   if (!cfg.sheetId) {
-    // No sheet configured — show demo data
     allStock       = getDemoStock();
     allBorrow      = getDemoBorrow();
     allInstruments = getDemoInstruments();
+    usingDemo = true;
   } else {
-    const [stock, borrow, inst] = await Promise.all([
-      gSheetCSV(cfg.stockSheet),
-      gSheetCSV(cfg.borrowSheet),
-      gSheetCSV(cfg.instSheet)
-    ]);
-    // Stock: use demo only if sheet completely missing
-    allStock  = stock.length  ? stock  : getDemoStock();
-    // BorrowReturn: use real data (even empty []) — no demo fallback
-    allBorrow = borrow; 
-    // Instruments: guard against garbage response (wrong sheet name)
-    const instOk = inst.length > 0 && inst[0] &&
-                   !JSON.stringify(inst[0]).includes('Copyright') &&
-                   !JSON.stringify(inst[0]).includes('function ');
-    allInstruments = instOk ? parseInstrumentsSheet(inst) : getDemoInstruments();
-    if (!instOk && inst.length > 0) console.warn('Instruments sheet bad — using demo');
+    try {
+      const [stock, borrow, inst] = await Promise.all([
+        gSheetCSV(cfg.stockSheet),
+        gSheetCSV(cfg.borrowSheet),
+        gSheetCSV(cfg.instSheet)
+      ]);
+      // Stock
+      if (stock.length) {
+        allStock = stock;
+      } else {
+        allStock = getDemoStock();
+        usingDemo = true;
+        showToast('⚠️ โหลด Stock sheet ไม่สำเร็จ — กำลังแสดง demo data', 'warn');
+      }
+      // BorrowReturn: accept empty array as valid
+      allBorrow = borrow;
+      // Instruments: guard against HTML/JS garbage response
+      const instOk = inst.length > 0 && inst[0] &&
+                     !JSON.stringify(inst[0]).includes('Copyright') &&
+                     !JSON.stringify(inst[0]).includes('function ');
+      if (instOk) {
+        allInstruments = parseInstrumentsSheet(inst);
+      } else {
+        allInstruments = getDemoInstruments();
+        if (inst.length > 0) {
+          usingDemo = true;
+          showToast('⚠️ โหลด Instruments sheet ไม่สำเร็จ — กำลังแสดง demo data', 'warn');
+        }
+      }
+    } catch(e) {
+      console.error('loadAllData error:', e);
+      allStock = getDemoStock(); allBorrow = getDemoBorrow(); allInstruments = getDemoInstruments();
+      usingDemo = true;
+      showToast('❌ โหลดข้อมูลจาก Sheets ไม่สำเร็จ กำลังใช้ demo data', 'error');
+    }
   }
 
   renderWarehouse();
@@ -1734,7 +1795,8 @@ async function loadAllData() {
   renderAnalytics();
   populateBorrowSelect();
   if (currentTab === 'instruments') renderInstruments();
-  setSyncStatus('ok');
+  setSyncStatus(usingDemo && cfg.sheetId ? 'warn' : 'ok');
+  isLoading = false;
 }
 
 function setSyncStatus(state) {
@@ -1745,6 +1807,11 @@ function setSyncStatus(state) {
     dot.style.background = 'var(--warn)';
     dot.style.boxShadow  = '0 0 6px var(--warn)';
     if (text) text.textContent = 'กำลังโหลด...';
+  } else if (state === 'warn') {
+    dot.style.background = 'var(--warn)';
+    dot.style.boxShadow  = '0 0 6px var(--warn)';
+    if (text) text.textContent = 'demo data';
+    if (lastSync) lastSync.textContent = '—';
   } else {
     dot.style.background = 'var(--success)';
     dot.style.boxShadow  = '0 0 6px var(--success)';
@@ -1919,16 +1986,16 @@ function renderStockTable(items) {
     const stTh = st === 'ok' ? 'พร้อมใช้' : st === 'low' ? 'ต่ำกว่าเกณฑ์' : 'หมด';
     const catClass = `cat-${item.category}`;
     return `<tr>
-      <td><span style="font-family:var(--mono);font-size:0.82rem;color:var(--text3)">${item.id||''}</span></td>
-      <td style="color:var(--text);font-weight:500">${item.name||''}</td>
-      <td><span class="cat-dot ${catClass}">${catLabel[item.category]||item.category}</span></td>
-      <td><span style="font-family:var(--mono);font-size:0.8rem">${item.partNo||'—'}</span></td>
-      <td>${item.brand||'—'}</td>
-      <td style="font-weight:700;font-family:var(--mono);color:${st==='out'?'var(--danger)':st==='low'?'var(--warn)':'var(--text)'}">${item.qty||0}</td>
-      <td style="color:var(--text3);font-family:var(--mono)">${item.minQty||0}</td>
-      <td>${item.unit||''}</td>
+      <td><span style="font-family:var(--mono);font-size:0.82rem;color:var(--text3)">${escapeHtml(item.id)}</span></td>
+      <td style="color:var(--text);font-weight:500">${escapeHtml(item.name)}</td>
+      <td><span class="cat-dot ${escapeHtml(catClass)}">${escapeHtml(catLabel[item.category]||item.category)}</span></td>
+      <td><span style="font-family:var(--mono);font-size:0.8rem">${escapeHtml(item.partNo||'—')}</span></td>
+      <td>${escapeHtml(item.brand||'—')}</td>
+      <td style="font-weight:700;font-family:var(--mono);color:${st==='out'?'var(--danger)':st==='low'?'var(--warn)':'var(--text)'}">${parseInt(item.qty)||0}</td>
+      <td style="color:var(--text3);font-family:var(--mono)">${parseInt(item.minQty)||0}</td>
+      <td>${escapeHtml(item.unit||'')}</td>
       <td><span class="badge ${bdg}">${stTh}</span></td>
-      <td style="color:var(--text3);font-family:var(--mono);font-size:0.8rem">${item.location||'—'}</td>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:0.8rem">${escapeHtml(item.location||'—')}</td>
     </tr>`;
   }).join('');
 }
@@ -2022,6 +2089,7 @@ async function gasWrite(action, payload) {
 }
 
 async function submitBorrow() {
+  if (!requireRole('admin','user')) return;
   const name = document.getElementById('borrowerName').value.trim();
   const dept = document.getElementById('borrowerDept').value.trim();
   const item = document.getElementById('borrowItem').value;
@@ -2038,7 +2106,7 @@ async function submitBorrow() {
     showToast('จำนวนที่ยืมมากกว่าสต็อกที่มี', 'error'); return;
   }
 
-  const newId = 'BR-' + String(Date.now()).slice(-6);
+  const newId = 'BR-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(-2).toUpperCase();
   const record = { id:newId, borrower:name, dept, itemId:item,
     itemName:stockItem.name, qty:String(qty),
     borrowDate:date, dueDate:due, returnDate:'', status:'borrowed', purpose:purp };
@@ -2063,6 +2131,7 @@ async function submitBorrow() {
 }
 
 async function submitReturn() {
+  if (!requireRole('admin','user')) return;
   const id   = document.getElementById('returnBorrowId').value;
   const date = document.getElementById('actualReturnDate').value;
   const note = document.getElementById('returnNote').value.trim();
@@ -2101,12 +2170,12 @@ function renderBorrowList() {
     const cls = { borrowed:'badge-borrowed', returned:'badge-returned', overdue:'badge-overdue' }[b.status] || '';
     const stTh = { borrowed:'กำลังยืม', returned:'คืนแล้ว', overdue:'เกินกำหนด' }[b.status] || b.status;
     return `<tr>
-      <td><span style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${b.id}</span></td>
-      <td style="color:var(--text)">${b.borrower}<br><span style="font-size:0.75rem;color:var(--text3)">${b.dept}</span></td>
-      <td>${b.itemName}</td>
-      <td style="font-family:var(--mono)">${b.qty}</td>
-      <td style="font-family:var(--mono);font-size:0.82rem">${b.borrowDate}</td>
-      <td style="font-family:var(--mono);font-size:0.82rem;color:${b.status==='overdue'?'var(--danger)':'var(--text2)'}">${b.dueDate}</td>
+      <td><span style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${escapeHtml(b.id)}</span></td>
+      <td style="color:var(--text)">${escapeHtml(b.borrower)}<br><span style="font-size:0.75rem;color:var(--text3)">${escapeHtml(b.dept)}</span></td>
+      <td>${escapeHtml(b.itemName)}</td>
+      <td style="font-family:var(--mono)">${parseInt(b.qty)||0}</td>
+      <td style="font-family:var(--mono);font-size:0.82rem">${escapeHtml(b.borrowDate)}</td>
+      <td style="font-family:var(--mono);font-size:0.82rem;color:${b.status==='overdue'?'var(--danger)':'var(--text2)'}">${escapeHtml(b.dueDate)}</td>
       <td><span class="badge ${cls}">${stTh}</span></td>
     </tr>`;
   }).join('');
@@ -2157,13 +2226,13 @@ function generateReport() {
   // Movement log
   const logRows = filtered.map(b => `
     <tr>
-      <td style="font-family:var(--mono);font-size:0.8rem">${b.borrowDate}</td>
-      <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${b.itemId}</td>
-      <td>${b.itemName}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem">${escapeHtml(b.borrowDate)}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${escapeHtml(b.itemId)}</td>
+      <td>${escapeHtml(b.itemName)}</td>
       <td><span class="badge ${b.status==='returned'?'badge-returned':'badge-borrowed'}">${b.status==='returned'?'คืน':'ยืม'}</span></td>
-      <td style="font-family:var(--mono)">${b.qty}</td>
-      <td>${b.borrower}</td>
-      <td style="color:var(--text3)">${b.dept}</td>
+      <td style="font-family:var(--mono)">${parseInt(b.qty)||0}</td>
+      <td>${escapeHtml(b.borrower)}</td>
+      <td style="color:var(--text3)">${escapeHtml(b.dept)}</td>
     </tr>`).join('');
   document.getElementById('reportTableBody').innerHTML = logRows || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">ไม่มีข้อมูลในช่วงที่เลือก</td></tr>';
 }
@@ -2500,7 +2569,7 @@ const INSTRUMENT_DATA = {
     {item:'1', id:'ORI001', name:'Straight Edge',               owner:'Pongtep P.',   mfr:'Starrett',       model:'380',           sn:'-',                  range:'0.0000 mm.',    tol:'+/- 0.006 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'17-Feb-2025'},
     {item:'2', id:'ORI003', name:'Turbular Inside Micrometer',  owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'137-212',       sn:'3005573',            range:'2-6.5 inch',    tol:'+/- 0.0012 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
     {item:'3', id:'ORI005', name:'Digimatic Caliper',           owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'500-197-20',    sn:'8103989',            range:'0-200 mm',      tol:'+/- 0.014 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:''},
-    {item:'3', id:'ORI007', name:'Digimatic Inside Micrometer', owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'339-293',       sn:'75231916',           range:'8-25 inch',     tol:'+/- 0.0005 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
+    {item:'4', id:'ORI007', name:'Digimatic Inside Micrometer', owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'339-293',       sn:'75231916',           range:'8-25 inch',     tol:'+/- 0.0005 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2025'},
     {item:'4', id:'ORI008', name:'Infrared Thermometer',        owner:'Pongtep P.',   mfr:'Fluke',          model:'62 mini',       sn:'91986702',           range:'0-140 °F',      tol:'+/- 30 °F',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Fahrenheit',                        expiry:'17-Feb-2025'},
     {item:'5', id:'DPS002', name:'Multi-Mode Pulse Simulator',  owner:'Pongtep P.',   mfr:'ST',             model:'ST502i',        sn:'5325-502i',          range:'10-10000Hz',    tol:'+/- 0.001%',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'12-Feb-2025'},
     {item:'6', id:'DMM001', name:'True RMS Multimeter',         owner:'Pongtep P.',   mfr:'Fluke',          model:'179',           sn:'11170529',           range:'0-1000v,0-50MΩ,0-10A', tol:'+/- 3v,0.7MΩ,0.12A',      freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'12-Feb-2025'},
@@ -2529,7 +2598,7 @@ const INSTRUMENT_DATA = {
     {item:'1', id:'ORI001', name:'Straight Edge',               owner:'Pongtep P.',   mfr:'Starrett',       model:'380',           sn:'-',                  range:'0.0000 mm.',    tol:'+/- 0.006 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Inch',                             expiry:'17-Feb-2026'},
     {item:'2', id:'ORI003', name:'Turbular Inside Micrometer',  owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'137-212',       sn:'3005573',            range:'2-6.5 inch',    tol:'+/- 0.0012 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2026'},
     {item:'3', id:'ORI005', name:'Digimatic Caliper',           owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'500-197-20',    sn:'8103989',            range:'0-200 mm',      tol:'+/- 0.014 mm.',                     freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:''},
-    {item:'3', id:'ORI007', name:'Digimatic Inside Micrometer', owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'339-293',       sn:'75231916',           range:'8-25 inch',     tol:'+/- 0.0005 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2026'},
+    {item:'4', id:'ORI007', name:'Digimatic Inside Micrometer', owner:'Pongtep P.',   mfr:'Mitutoyo',       model:'339-293',       sn:'75231916',           range:'8-25 inch',     tol:'+/- 0.0005 inch',                   freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'17-Feb-2026'},
     {item:'4', id:'ORI008', name:'Infrared Thermometer',        owner:'Pongtep P.',   mfr:'Fluke',          model:'62 mini',       sn:'91986702',           range:'0-140 °F',      tol:'+/- 30 °F',                         freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'Cert หน่วย Fahrenheit',                        expiry:'17-Feb-2026'},
     {item:'5', id:'DPS002', name:'Multi-Mode Pulse Simulator',  owner:'Pongtep P.',   mfr:'ST',             model:'ST502i',        sn:'5325-502i',          range:'10-10000Hz',    tol:'+/- 0.001%',                        freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'11-Feb-2026'},
     {item:'6', id:'DMM001', name:'True RMS Multimeter',         owner:'Pongtep P.',   mfr:'Fluke',          model:'179',           sn:'11170529',           range:'0-1000v,0-50MΩ,0-10A', tol:'+/- 3v,0.7MΩ,0.12A',      freq:'1ปี/ครั้ง', type:'ภายนอก', remark:'',                                             expiry:'11-Feb-2026'},
@@ -2565,7 +2634,8 @@ function switchInstYear(year, btn) {
 
 function parseExpiry(str) {
   if (!str || str.trim() === '') return null;
-  const s = str.trim();
+  // Strip carriage returns from Windows-style CSV
+  const s = str.replace(/\r/g, '').trim();
   const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
 
   // Pattern: DD-Mon-YYYY or DD-Mon-YY  e.g. "17-Feb-2026", "26-AUG-26"
@@ -2687,16 +2757,16 @@ function renderInstruments() {
     const expDisplay = inst.expiry ? `${inst.expiry}${daysBadge}` : '—';
     const rowStyle = st === 'expired' ? 'background:rgba(248,81,73,0.03)' : st === 'soon' ? 'background:rgba(240,173,78,0.03)' : '';
     return `<tr style="${rowStyle}">
-      <td style="color:var(--text3);font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${inst.item}</td>
-      <td style="font-family:var(--mono);font-size:0.82rem;color:var(--accent2);font-weight:600;white-space:nowrap">${inst.id}</td>
-      <td style="color:var(--text);font-weight:500">${inst.name}</td>
-      <td style="color:var(--text2);font-size:0.83rem;white-space:nowrap">${inst.owner}</td>
-      <td style="white-space:nowrap">${inst.mfr}</td>
-      <td style="font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${inst.model}</td>
-      <td style="font-family:var(--mono);font-size:0.78rem;color:var(--text3);white-space:nowrap">${inst.sn}</td>
-      <td style="font-size:0.82rem;white-space:nowrap">${inst.range}</td>
-      <td style="font-size:0.8rem;color:var(--text3)">${inst.tol}</td>
-      <td style="white-space:nowrap;font-family:var(--mono);font-size:0.8rem">${expDisplay}</td>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${escapeHtml(inst.item)}</td>
+      <td style="font-family:var(--mono);font-size:0.82rem;color:var(--accent2);font-weight:600;white-space:nowrap">${escapeHtml(inst.id)}</td>
+      <td style="color:var(--text);font-weight:500">${escapeHtml(inst.name)}</td>
+      <td style="color:var(--text2);font-size:0.83rem;white-space:nowrap">${escapeHtml(inst.owner)}</td>
+      <td style="white-space:nowrap">${escapeHtml(inst.mfr)}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${escapeHtml(inst.model)}</td>
+      <td style="font-family:var(--mono);font-size:0.78rem;color:var(--text3);white-space:nowrap">${escapeHtml(inst.sn)}</td>
+      <td style="font-size:0.82rem;white-space:nowrap">${escapeHtml(inst.range)}</td>
+      <td style="font-size:0.8rem;color:var(--text3)">${escapeHtml(inst.tol)}</td>
+      <td style="white-space:nowrap;font-family:var(--mono);font-size:0.8rem">${escapeHtml(inst.expiry||'')}${daysBadge}</td>
       <td><span class="badge ${statusCls[st]}">${statusTh[st]}</span></td>
     </tr>`;
   }).join('');
@@ -2727,10 +2797,10 @@ function renderCalibrationTimeline(data) {
     const rowCls   = st === 'expired' ? 'expired-row' : st === 'soon' ? 'soon-row' : '';
     const daysTxt  = days < 0 ? `เกิน ${Math.abs(days)} วัน` : days === 0 ? 'วันนี้' : `${days} วัน`;
     return `<div class="cal-item ${rowCls}">
-      <span class="cal-name">${inst.id} — ${inst.name}</span>
+      <span class="cal-name">${escapeHtml(inst.id)} — ${escapeHtml(inst.name)}</span>
       <div class="cal-bar-track"><div class="cal-bar-fill" style="width:${st==='expired'?0:pct}%;background:${barColor}"></div></div>
-      <span class="cal-date">${inst.expiry} <span style="font-size:0.7rem;color:${barColor}">(${daysTxt})</span></span>
-      <span class="cal-owner">${inst.owner}</span>
+      <span class="cal-date">${escapeHtml(inst.expiry)} <span style="font-size:0.7rem;color:${barColor}">(${daysTxt})</span></span>
+      <span class="cal-owner">${escapeHtml(inst.owner)}</span>
     </div>`;
   }).join('');
 }
@@ -2793,7 +2863,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.7.2
+   AUTH / LOGIN SYSTEM  v1.8.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    Roles: admin | user | viewer
@@ -2801,20 +2871,24 @@ function initTheme() {
 
 let currentUser = null;
 
-// ── Check saved session on load
+// ── Check saved session on load (8h expiry)
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('mps_session');
   if (saved) {
     try {
       const sess = JSON.parse(saved);
-      if (sess && sess.username && sess.role) {
+      const expired = !sess.exp || (Date.now() - sess.exp > SESSION_TTL_MS);
+      if (sess && sess.username && sess.role && !expired) {
         currentUser = sess;
         showDashboard();
         return;
+      } else if (expired) {
+        localStorage.removeItem('mps_session');
       }
     } catch(e) {}
   }
-  // No session — show login
+  // No valid session — show login
   document.getElementById('loginPage').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   setTimeout(() => document.getElementById('loginUser').focus(), 100);
@@ -2845,7 +2919,7 @@ async function doLogin() {
     // Also check local users sheet data
     const user = await verifyUser(username, password);
     if (user) {
-      currentUser = { username: user.username, name: user.name || user.username, role: user.role || 'viewer' };
+      currentUser = { username: user.username, name: user.name || user.username, role: user.role || 'viewer', exp: Date.now() };
       localStorage.setItem('mps_session', JSON.stringify(currentUser));
       showDashboard();
     } else {
@@ -2944,10 +3018,9 @@ function showLoginError(msg) {
 
 </script>
 
-</html>
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.7.2
+   INTERNAL TEST MODULE  v1.8.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    ============================================================ */
 
@@ -3529,7 +3602,7 @@ function exportTestPDF() {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.7.2
+   DATA MANAGEMENT MODULE  v1.8.0
    CRUD for Stock + Instruments → writes to Google Sheets
    ============================================================ */
 
@@ -3628,9 +3701,9 @@ function openDMModal(type, mode, idx) {
     bodyEl.innerHTML = `
       <div class="dm-form-grid">
         <div class="form-group"><label>รหัสสินค้า *</label>
-          <input type="text" id="dm_id" value="${d.id||''}" placeholder="FC-001" ${mode==='edit'?'readonly style="opacity:0.6"':''}></div>
+          <input type="text" id="dm_id" value="${escapeHtml(d.id||'')}" placeholder="FC-001" ${mode==='edit'?'readonly style="opacity:0.6"':''}></div>
         <div class="form-group"><label>ชื่อสินค้า *</label>
-          <input type="text" id="dm_name" value="${d.name||''}" placeholder="ชื่อสินค้า"></div>
+          <input type="text" id="dm_name" value="${escapeHtml(d.name||'')}" placeholder="ชื่อสินค้า"></div>
         <div class="form-group"><label>หมวดหมู่</label>
           <select id="dm_cat">
             <option value="flow" ${d.category==='flow'?'selected':''}>Flow Computer</option>
@@ -3638,17 +3711,17 @@ function openDMModal(type, mode, idx) {
             <option value="acc"  ${d.category==='acc' ?'selected':''}>Accessories</option>
           </select></div>
         <div class="form-group"><label>Part No.</label>
-          <input type="text" id="dm_partNo" value="${d.partNo||''}" placeholder="Part Number"></div>
+          <input type="text" id="dm_partNo" value="${_dv('partNo')}" placeholder="Part Number"></div>
         <div class="form-group"><label>ยี่ห้อ</label>
-          <input type="text" id="dm_brand" value="${d.brand||''}" placeholder="Brand"></div>
+          <input type="text" id="dm_brand" value="${_dv('brand')}" placeholder="Brand"></div>
         <div class="form-group"><label>จำนวนคงเหลือ</label>
-          <input type="number" id="dm_qty" value="${d.qty||0}" min="0"></div>
+          <input type="number" id="dm_qty" value="${parseInt(d.qty)||0}" min="0"></div>
         <div class="form-group"><label>Min Stock</label>
-          <input type="number" id="dm_minQty" value="${d.minQty||1}" min="0"></div>
+          <input type="number" id="dm_minQty" value="${parseInt(d.minQty)||1}" min="0"></div>
         <div class="form-group"><label>หน่วย</label>
-          <input type="text" id="dm_unit" value="${d.unit||'ชิ้น'}" placeholder="ชิ้น/ชุด/เมตร"></div>
+          <input type="text" id="dm_unit" value="${_dv('unit')||'ชิ้น'}" placeholder="ชิ้น/ชุด/เมตร"></div>
         <div class="form-group"><label>ที่เก็บ</label>
-          <input type="text" id="dm_location" value="${d.location||''}" placeholder="A1-01"></div>
+          <input type="text" id="dm_location" value="${_dv('location')}" placeholder="A1-01"></div>
         <div class="form-group"><label>สถานะ</label>
           <select id="dm_status">
             <option value="ok"  ${(d.status||'ok')==='ok' ?'selected':''}>OK</option>
@@ -3665,24 +3738,24 @@ function openDMModal(type, mode, idx) {
     bodyEl.innerHTML = `
       <div class="dm-form-grid">
         <div class="form-group"><label>รหัส *</label>
-          <input type="text" id="dm_id" value="${d.id||''}" placeholder="ORI001" ${mode==='edit'?'readonly style="opacity:0.6"':''}></div>
+          <input type="text" id="dm_id" value="${escapeHtml(d.id||'')}" placeholder="ORI001" ${mode==='edit'?'readonly style="opacity:0.6"':''}></div>
         <div class="form-group"><label>ชื่อเครื่องมือ *</label>
-          <input type="text" id="dm_name" value="${d.name||''}" placeholder="ชื่อเครื่องมือ"></div>
+          <input type="text" id="dm_name" value="${escapeHtml(d.name||'')}" placeholder="ชื่อเครื่องมือ"></div>
         <div class="form-group"><label>ผู้เก็บรักษา</label>
-          <input type="text" id="dm_owner" value="${d.owner||''}" placeholder="ชื่อผู้รับผิดชอบ"></div>
+          <input type="text" id="dm_owner" value="${escapeHtml(d.owner||'')}" placeholder="ชื่อผู้รับผิดชอบ"></div>
         <div class="form-group"><label>Manufacturer</label>
-          <input type="text" id="dm_mfr" value="${d.mfr||''}" placeholder="ยี่ห้อ"></div>
+          <input type="text" id="dm_mfr" value="${escapeHtml(d.mfr||'')}" placeholder="ยี่ห้อ"></div>
         <div class="form-group"><label>Model</label>
-          <input type="text" id="dm_model" value="${d.model||''}" placeholder="รุ่น"></div>
+          <input type="text" id="dm_model" value="${escapeHtml(d.model||'')}" placeholder="รุ่น"></div>
         <div class="form-group"><label>S/N</label>
-          <input type="text" id="dm_sn" value="${d.sn||''}" placeholder="Serial Number"></div>
+          <input type="text" id="dm_sn" value="${escapeHtml(d.sn||'')}" placeholder="Serial Number"></div>
         <div class="form-group"><label>Range</label>
-          <input type="text" id="dm_range" value="${d.range||''}" placeholder="0-100 mm"></div>
+          <input type="text" id="dm_range" value="${escapeHtml(d.range||'')}" placeholder="0-100 mm"></div>
         <div class="form-group"><label>ค่าความคลาดเคลื่อน</label>
-          <input type="text" id="dm_tol" value="${d.tol||''}" placeholder="+/- 0.01"></div>
+          <input type="text" id="dm_tol" value="${escapeHtml(d.tol||'')}" placeholder="+/- 0.01"></div>
         <div class="form-group"><label>วันหมดอายุ</label>
           <div style="display:flex;gap:6px;align-items:center">
-            <input type="text" id="dm_expiry" value="${d.expiry||''}" placeholder="17-Feb-2026" style="flex:1">
+            <input type="text" id="dm_expiry" value="${escapeHtml(d.expiry||'')}" placeholder="17-Feb-2026" style="flex:1">
             <input type="date" id="dm_expiry_picker" style="width:36px;min-width:36px;padding:0;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);cursor:pointer;opacity:0;position:absolute" title="เลือกจากปฏิทิน"
               onchange="(function(){const v=document.getElementById('dm_expiry_picker').value;if(!v)return;const d=new Date(v);const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('dm_expiry').value=String(d.getDate()).padStart(2,'0')+'-'+m[d.getMonth()]+'-'+d.getFullYear()})()">
             <button type="button" title="เลือกจากปฏิทิน" onclick="document.getElementById('dm_expiry_picker').showPicker()" style="width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
@@ -3696,7 +3769,7 @@ function openDMModal(type, mode, idx) {
             <option value="ภายใน" ${d.type==='ภายใน'?'selected':''}>ภายใน</option>
           </select></div>
         <div class="form-group" style="grid-column:span 2"><label>หมายเหตุ</label>
-          <input type="text" id="dm_remark" value="${d.remark||''}" placeholder="หมายเหตุ"></div>
+          <input type="text" id="dm_remark" value="${escapeHtml(d.remark||'')}" placeholder="หมายเหตุ"></div>
       </div>`;
   }
   document.getElementById('dmModal').style.display = 'flex';
@@ -3708,6 +3781,7 @@ function closeDMModal() {
 
 // ── Save from modal
 async function saveDMModal() {
+  if (!requireRole('admin')) return;
   const mode = dmModalMode;
   const type = dmModalType;
 
@@ -3721,8 +3795,8 @@ async function saveDMModal() {
       category: document.getElementById('dm_cat').value,
       partNo:   document.getElementById('dm_partNo').value.trim() || '—',
       brand:    document.getElementById('dm_brand').value.trim(),
-      qty:      document.getElementById('dm_qty').value,
-      minQty:   document.getElementById('dm_minQty').value,
+      qty:      String(parseInt(document.getElementById('dm_qty').value) || 0),
+      minQty:   String(parseInt(document.getElementById('dm_minQty').value) || 0),
       unit:     document.getElementById('dm_unit').value.trim(),
       location: document.getElementById('dm_location').value.trim(),
       status:   document.getElementById('dm_status').value,
@@ -3756,7 +3830,7 @@ async function saveDMModal() {
 
     const record = {
       id, name,
-      item: String(allInstruments.length + 1),
+      item: mode === 'add' ? String(allInstruments.length + 1) : (dmModalData?.item || String(allInstruments.length + 1)),
       owner:  document.getElementById('dm_owner').value.trim(),
       mfr:    document.getElementById('dm_mfr').value.trim(),
       model:  document.getElementById('dm_model').value.trim(),
@@ -3796,6 +3870,7 @@ async function saveDMModal() {
 
 // ── Delete item
 async function deleteDMItem(type, idx) {
+  if (!requireRole('admin')) return;
   const item = type === 'stock' ? allStock[idx] : allInstruments[idx];
   if (!item || !confirm(`ลบ "${item.name}" ใช่หรือไม่?`)) return;
 
@@ -3821,3 +3896,4 @@ async function deleteDMItem(type, idx) {
 }
 </script>
 </body>
+</html>
