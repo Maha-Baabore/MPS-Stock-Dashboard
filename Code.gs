@@ -1,5 +1,5 @@
 // ============================================================
-//  MPS Stock — Google Apps Script Backend  v1.5.2
+//  MPS Stock — Google Apps Script Backend  v1.7.0
 //  วิธีติดตั้ง:
 //  1. เปิด Google Sheets → Extensions → Apps Script
 //  2. วางโค้ดนี้ทั้งหมดแทนที่โค้ดเดิม → Save (Ctrl+S)
@@ -27,7 +27,7 @@ function doGet(e) {
     const p = e.parameter || {};
     // Health check
     if (!p.action) {
-      res.setContent(JSON.stringify({ ok: true, msg: 'MPS Stock GAS v1.5.2 — ready' }));
+      res.setContent(JSON.stringify({ ok: true, msg: 'MPS Stock GAS v1.7.0 — ready' }));
       return res;
     }
     // Map params to data object
@@ -283,20 +283,61 @@ function deleteStockItem(data) {
 // ──────────── INSTRUMENTS CRUD ────────────
 const INST_COLS = ['id','name','owner','mfr','model','sn','range','tol','freq','type','expiry','remark'];
 
+// Map จาก field key ที่ dashboard ส่งมา → ชื่อ header ที่เป็นไปได้ใน Google Sheets
+const INST_HEADER_ALIASES = {
+  'id':     ['id','รหัส','code'],
+  'name':   ['name','ชื่อเครื่องมือ','ชื่อ','instrument'],
+  'owner':  ['owner','ผู้เก็บรักษา','keeper','ผู้รับผิดชอบ'],
+  'mfr':    ['mfr','manufacturer','brand','ยี่ห้อ'],
+  'model':  ['model','รุ่น'],
+  'sn':     ['sn','s/n','serial','serialnumber'],
+  'range':  ['range','ช่วง'],
+  'tol':    ['tol','tolerance','ค่าความคลาดเคลื่อน','error'],
+  'freq':   ['freq','frequency','interval','ความถี่'],
+  'type':   ['type','calibration','ลักษณะ','method'],
+  'expiry': ['expiry','expire','วันหมดอายุ','หมดอายุ','expirydate'],
+  'remark': ['remark','หมายเหตุ','note','remark/note'],
+};
+
+// หา column index ใน sheet จาก aliases
+function findInstCol(headers, field) {
+  const aliases = INST_HEADER_ALIASES[field] || [field];
+  for (const alias of aliases) {
+    const idx = headers.findIndex(h => h.replace(/[\s\/\-_]/g,'').toLowerCase() === alias.replace(/[\s\/\-_]/g,'').toLowerCase());
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+
 function addInstrument(data) {
   try {
     const ss    = getSpreadsheet(data);
     const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
     if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
-    ensureHeader(sheet, INST_COLS);
-    const rows = sheet.getDataRange().getValues();
+
+    const rows    = sheet.getDataRange().getValues();
     const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx = headers.indexOf('id');
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idIdx]).trim() === String(data.id).trim())
-        return { ok:false, msg:'Duplicate ID: ' + data.id };
+
+    // Check duplicate by id
+    const idColIdx = findInstCol(headers, 'id');
+    if (idColIdx >= 0) {
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][idColIdx]).trim() === String(data.id).trim())
+          return { ok:false, msg:'Duplicate ID: ' + data.id };
+      }
     }
-    sheet.appendRow(INST_COLS.map(c => data[c] || ''));
+
+    // Build new row matching existing headers
+    const newRow = rows[0].map((h, colIdx) => {
+      const hNorm = String(h).toLowerCase().trim();
+      // Find which field this header belongs to
+      for (const [field, aliases] of Object.entries(INST_HEADER_ALIASES)) {
+        const match = aliases.some(a => a.replace(/[\s\/\-_]/g,'').toLowerCase() === hNorm.replace(/[\s\/\-_]/g,'').toLowerCase());
+        if (match && data[field] !== undefined) return data[field];
+      }
+      return '';
+    });
+    sheet.appendRow(newRow);
     return { ok:true, msg:'addInstrument success' };
   } catch(e) { return { ok:false, msg:e.toString() }; }
 }
@@ -306,18 +347,27 @@ function updateInstrument(data) {
     const ss    = getSpreadsheet(data);
     const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
     if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
-    const rows = sheet.getDataRange().getValues();
+
+    const rows    = sheet.getDataRange().getValues();
     const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx = headers.indexOf('id');
+    const idColIdx = findInstCol(headers, 'id');
+    if (idColIdx < 0) return { ok:false, msg:'Cannot find id column in Instruments sheet' };
+
     for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
-        const newRow = INST_COLS.map(c => {
-          const hi = headers.indexOf(c.toLowerCase());
-          return data[c] !== undefined ? data[c] : (hi >= 0 ? rows[i][hi] : '');
-        });
-        sheet.getRange(i+1, 1, 1, newRow.length).setValues([newRow]);
-        return { ok:true, msg:'updateInstrument success' };
-      }
+      if (String(rows[i][idColIdx]).trim() !== String(data.id).trim()) continue;
+
+      // Update only columns that have a matching field in data
+      rows[0].forEach((h, colIdx) => {
+        const hNorm = String(h).toLowerCase().trim();
+        for (const [field, aliases] of Object.entries(INST_HEADER_ALIASES)) {
+          const match = aliases.some(a => a.replace(/[\s\/\-_]/g,'').toLowerCase() === hNorm.replace(/[\s\/\-_]/g,'').toLowerCase());
+          if (match && data[field] !== undefined) {
+            sheet.getRange(i+1, colIdx+1).setValue(data[field]);
+            break;
+          }
+        }
+      });
+      return { ok:true, msg:'updateInstrument success' };
     }
     return { ok:false, msg:'Instrument not found: ' + data.id };
   } catch(e) { return { ok:false, msg:e.toString() }; }

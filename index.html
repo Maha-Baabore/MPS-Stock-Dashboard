@@ -887,7 +887,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.7.0</div>
+    <div class="login-footer">MPS Department · v1.7.1</div>
   </div>
 </div>
 
@@ -935,7 +935,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.7.0</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.7.1</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -2793,7 +2793,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.7.0
+   AUTH / LOGIN SYSTEM  v1.7.1
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    Roles: admin | user | viewer
@@ -2947,7 +2947,7 @@ function showLoginError(msg) {
 </html>
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.7.0
+   INTERNAL TEST MODULE  v1.7.1
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    ============================================================ */
 
@@ -3324,7 +3324,7 @@ function clearTestHistory() {
   showToast('🗑️ ล้างประวัติการทดสอบทั้งหมดแล้ว', 'success');
 }
 
-// ── Export PDF  v1.7.0
+// ── Export PDF  v1.7.1
 function exportTestPDF() {
   var mod = IT_MODULES[itCurrentMod];
   var allItems = mod.sections.flatMap(function(s){ return s.items; });
@@ -3529,7 +3529,7 @@ function exportTestPDF() {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.7.0
+   DATA MANAGEMENT MODULE  v1.7.1
    CRUD for Stock + Instruments → writes to Google Sheets
    ============================================================ */
 
