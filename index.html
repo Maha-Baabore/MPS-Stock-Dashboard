@@ -822,12 +822,14 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
 .dm-add-btn svg { width:15px; height:15px; }
 .dm-add-btn:hover { background:#00f0c0; transform:translateY(-1px); }
 .dm-edit-btn, .dm-del-btn {
-  padding:4px 8px; border-radius:5px; border:none;
-  cursor:pointer; font-size:0.85rem; transition:all 0.12s;
-  background:var(--bg3); margin-left:3px;
+  width:28px; height:28px; border-radius:var(--radius-sm); border:1px solid transparent;
+  cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center;
+  justify-content:center; margin-left:3px; flex-shrink:0;
 }
-.dm-edit-btn:hover { background:rgba(0,153,255,0.2); }
-.dm-del-btn:hover  { background:rgba(248,81,73,0.2); }
+.dm-edit-btn { background:rgba(0,153,255,0.08); border-color:rgba(0,153,255,0.25); color:var(--accent2); }
+.dm-edit-btn:hover { background:rgba(0,153,255,0.22); border-color:var(--accent2); }
+.dm-del-btn { background:rgba(248,81,73,0.08); border-color:rgba(248,81,73,0.25); color:var(--danger); }
+.dm-del-btn:hover  { background:rgba(248,81,73,0.22); border-color:var(--danger); }
 .dm-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .dm-form-grid .form-group { display:flex; flex-direction:column; gap:5px; }
 .dm-form-grid label { font-size:0.78rem; color:var(--text2); font-weight:500; }
@@ -885,7 +887,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.6.7</div>
+    <div class="login-footer">MPS Department · v1.7.0</div>
   </div>
 </div>
 
@@ -933,7 +935,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.6.7</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.7.0</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -1067,8 +1069,10 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
         <div class="borrow-form-card">
           <h3 class="form-title">
             <div class="form-title-tabs">
-              <button class="form-tab active" id="btnBorrow" onclick="switchForm('borrow')">📤 ยืมสินค้า</button>
-              <button class="form-tab" id="btnReturn" onclick="switchForm('return')">📥 คืนสินค้า</button>
+              <button class="form-tab active" id="btnBorrow" onclick="switchForm('borrow')">
+                <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>ยืมสินค้า</button>
+              <button class="form-tab" id="btnReturn" onclick="switchForm('return')">
+                <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>คืนสินค้า</button>
             </div>
           </h3>
           <div id="borrowForm">
@@ -1346,20 +1350,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
           <button class="it-mod-tab" data-mod="hart">HART Module</button>
           <button class="it-mod-tab" data-mod="io">I/O Module</button>
         </div>
-        <div class="it-actions">
-          <button class="btn-export" onclick="exportTestPDF()">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/><line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            Export PDF
-          </button>
-          <button class="btn-export" onclick="resetChecklist()">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 3v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            Reset
-          </button>
-          <button class="it-save-btn" onclick="saveToStockFromTest()">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/><polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="2"/><polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="2"/></svg>
-            บันทึกเข้าคลัง
-          </button>
-        </div>
+
       </div>
 
       <!-- Checklist Form -->
@@ -1371,7 +1362,12 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="table-card">
         <div class="table-header">
           <span class="table-title">ประวัติการทดสอบ</span>
-          <span class="inst-count" id="testHistoryCount"></span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="inst-count" id="testHistoryCount"></span>
+            <button onclick="clearTestHistory()" title="ล้างประวัติการทดสอบทั้งหมด" style="width:30px;height:30px;border-radius:var(--radius-sm);background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.25);color:var(--danger);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0" onmouseover="this.style.background='rgba(248,81,73,0.2)';this.style.borderColor='var(--danger)'" onmouseout="this.style.background='rgba(248,81,73,0.08)';this.style.borderColor='rgba(248,81,73,0.25)'">
+              <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
         </div>
         <div class="table-wrapper">
           <table>
@@ -1503,7 +1499,9 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
 <!-- Config Modal -->
 <div id="configModal" class="modal-overlay" style="display:none">
   <div class="modal-box">
-    <h3>⚙️ ตั้งค่า Google Sheets</h3>
+    <h3 style="display:flex;align-items:center;gap:8px">
+      <svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/></svg>
+      ตั้งค่า Google Sheets</h3>
     <p class="modal-desc">กรอก Google Sheets ID และ Sheet Names เพื่อเชื่อมต่อข้อมูล</p>
     <div class="form-group">
       <label>Spreadsheet ID</label>
@@ -2567,22 +2565,35 @@ function switchInstYear(year, btn) {
 
 function parseExpiry(str) {
   if (!str || str.trim() === '') return null;
-  // Try parse flexible date strings like "17-Feb-2025", "09-Jul-2025", "Sep-2025", "26-AUG-26"
   const s = str.trim();
   const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
-  
-  // Pattern: DD-Mon-YYYY or DD-Mon-YY
-  let m = s.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})$/);
+
+  // Pattern: DD-Mon-YYYY or DD-Mon-YY  e.g. "17-Feb-2026", "26-AUG-26"
+  let m = s.match(/^(\d{1,2})[\/\-]([A-Za-z]+)[\/\-](\d{2,4})$/);
   if (m) {
     const yr = m[3].length===2 ? 2000+parseInt(m[3]) : parseInt(m[3]);
-    return new Date(yr, months[m[2].toLowerCase().substr(0,3)], parseInt(m[1]));
+    const mo = months[m[2].toLowerCase().substr(0,3)];
+    if (mo !== undefined) return new Date(yr, mo, parseInt(m[1]));
   }
-  // Pattern: Mon-YYYY (no day) e.g. "Sep-2025"
-  m = s.match(/^([A-Za-z]+)-(\d{2,4})$/);
+  // Pattern: Mon-YYYY (no day) e.g. "Sep-2025", "Feb-2026"
+  m = s.match(/^([A-Za-z]+)[\/\-](\d{2,4})$/);
   if (m) {
     const yr = m[2].length===2 ? 2000+parseInt(m[2]) : parseInt(m[2]);
-    return new Date(yr, months[m[1].toLowerCase().substr(0,3)], 1);
+    const mo = months[m[1].toLowerCase().substr(0,3)];
+    if (mo !== undefined) return new Date(yr, mo, 1);
   }
+  // Pattern: YYYY-MM-DD  e.g. "2026-02-17"
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]));
+  // Pattern: DD/MM/YYYY  e.g. "17/02/2026"
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    const yr = m[3].length===2 ? 2000+parseInt(m[3]) : parseInt(m[3]);
+    return new Date(yr, parseInt(m[2])-1, parseInt(m[1]));
+  }
+  // Pattern: DD-MM-YYYY  e.g. "17-02-2026"
+  m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (m) return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]));
   return null;
 }
 
@@ -2643,7 +2654,7 @@ function renderInstruments() {
   const alerts = data.filter(i => getInstStatus(i) === 'expired' || getInstStatus(i) === 'soon');
   if (alerts.length) {
     banner.style.display = 'flex';
-    banner.innerHTML = `<span class="expiry-banner-title">⚠️ แจ้งเตือนสอบเทียบ</span>` +
+    banner.innerHTML = `<span class="expiry-banner-title"><svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> แจ้งเตือนสอบเทียบ</span>` +
       alerts.map(i => {
         const st = getInstStatus(i);
         const d  = getDaysLeft(i);
@@ -2670,7 +2681,7 @@ function renderInstruments() {
     let daysBadge = '';
     if (days !== null && !inst.removed) {
       const dcls = days < 0 ? 'days-exp' : days <= 90 ? 'days-warn' : 'days-ok';
-      const dtxt = days < 0 ? `เกิน ${Math.abs(days)}ว` : `${days}ว`;
+      const dtxt = days < 0 ? `เกิน ${Math.abs(days)} วัน` : `${days} วัน`;
       daysBadge = `<span class="days-pill ${dcls}">${dtxt}</span>`;
     }
     const expDisplay = inst.expiry ? `${inst.expiry}${daysBadge}` : '—';
@@ -2782,7 +2793,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.6.7
+   AUTH / LOGIN SYSTEM  v1.7.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    Roles: admin | user | viewer
@@ -2936,7 +2947,7 @@ function showLoginError(msg) {
 </html>
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.6.7
+   INTERNAL TEST MODULE  v1.7.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    ============================================================ */
 
@@ -3130,7 +3141,23 @@ function renderITChecklist() {
 
   document.getElementById('itFormCard').innerHTML = `
     <div class="it-form-header">
-      <div class="it-form-title">🔧 ${mod.title}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px">
+        <div class="it-form-title" style="margin-bottom:0"><svg viewBox="0 0 24 24" fill="none" style="width:15px;height:15px;vertical-align:-2px;margin-right:6px"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${mod.title}</div>
+        <div style="display:flex;gap:7px;flex-shrink:0;align-items:center">
+          <button class="btn-export" onclick="exportTestPDF()" style="white-space:nowrap">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/><line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Export PDF
+          </button>
+          <button class="btn-export" onclick="resetChecklist()" style="white-space:nowrap">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 3v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Reset
+          </button>
+          <button class="it-save-btn" onclick="saveToStockFromTest()" style="white-space:nowrap">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/><polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="2"/><polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="2"/></svg>
+            บันทึกเข้าคลัง
+          </button>
+        </div>
+      </div>
       <div class="it-serial-grid">${serialsHtml}</div>
       ${testerHtml}
     </div>
@@ -3288,7 +3315,16 @@ function renderTestHistory() {
   }).join('');
 }
 
-// ── Export PDF  v1.6.7
+function clearTestHistory() {
+  if (!itTestHistory.length) { showToast('ไม่มีประวัติการทดสอบให้ล้าง', 'info'); return; }
+  if (!confirm(`ล้างประวัติการทดสอบทั้งหมด ${itTestHistory.length} รายการใช่หรือไม่?`)) return;
+  itTestHistory = [];
+  localStorage.setItem('mps_test_history', '[]');
+  renderTestHistory();
+  showToast('🗑️ ล้างประวัติการทดสอบทั้งหมดแล้ว', 'success');
+}
+
+// ── Export PDF  v1.7.0
 function exportTestPDF() {
   var mod = IT_MODULES[itCurrentMod];
   var allItems = mod.sections.flatMap(function(s){ return s.items; });
@@ -3493,7 +3529,7 @@ function exportTestPDF() {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.6.7
+   DATA MANAGEMENT MODULE  v1.7.0
    CRUD for Stock + Instruments → writes to Google Sheets
    ============================================================ */
 
@@ -3535,8 +3571,13 @@ function renderDMTable(type) {
         <td>${item.unit||''}</td>
         <td style="color:var(--text3)">${item.location||'—'}</td>
         <td>
-          <button class="dm-edit-btn" onclick="openDMModal('stock','edit',${idx})">✏️</button>
-          <button class="dm-del-btn"  onclick="deleteDMItem('stock',${idx})">🗑️</button>
+        <td style="white-space:nowrap">
+          <button class="dm-edit-btn" onclick="openDMModal('stock','edit',${idx})" title="แก้ไข">
+            <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="dm-del-btn" onclick="deleteDMItem('stock',${idx})" title="ลบ">
+            <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
         </td>
       </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ไม่มีข้อมูล</td></tr>';
   } else {
@@ -3557,8 +3598,13 @@ function renderDMTable(type) {
         <td style="font-family:var(--mono);font-size:0.8rem">${inst.expiry||'—'}</td>
         <td><span class="badge ${stCls}">${stTh}</span></td>
         <td>
-          <button class="dm-edit-btn" onclick="openDMModal('instruments','edit',${idx})">✏️</button>
-          <button class="dm-del-btn"  onclick="deleteDMItem('instruments',${idx})">🗑️</button>
+        <td style="white-space:nowrap">
+          <button class="dm-edit-btn" onclick="openDMModal('instruments','edit',${idx})" title="แก้ไข">
+            <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="dm-del-btn" onclick="deleteDMItem('instruments',${idx})" title="ลบ">
+            <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
         </td>
       </tr>`;
     }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ไม่มีข้อมูล</td></tr>';
@@ -3576,7 +3622,9 @@ function openDMModal(type, mode, idx) {
   const bodyEl  = document.getElementById('dmModalBody');
 
   if (type === 'stock') {
-    titleEl.textContent = mode === 'add' ? '➕ เพิ่มสินค้าใหม่' : '✏️ แก้ไขสินค้า';
+    titleEl.innerHTML = mode === 'add'
+      ? `<svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> เพิ่มสินค้าใหม่`
+      : `<svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> แก้ไขสินค้า`;
     descEl.textContent  = 'ข้อมูลจะถูกบันทึกลง Google Sheets sheet Stock';
     const d = dmModalData || {};
     bodyEl.innerHTML = `
@@ -3611,7 +3659,9 @@ function openDMModal(type, mode, idx) {
           </select></div>
       </div>`;
   } else {
-    titleEl.textContent = mode === 'add' ? '➕ เพิ่มเครื่องมือใหม่' : '✏️ แก้ไขเครื่องมือวัด';
+    titleEl.innerHTML = mode === 'add'
+      ? `<svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> เพิ่มเครื่องมือใหม่`
+      : `<svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> แก้ไขเครื่องมือวัด`;
     descEl.textContent  = 'ข้อมูลจะถูกบันทึกลง Google Sheets sheet Instruments';
     const d = dmModalData || {};
     bodyEl.innerHTML = `
@@ -3633,7 +3683,15 @@ function openDMModal(type, mode, idx) {
         <div class="form-group"><label>ค่าความคลาดเคลื่อน</label>
           <input type="text" id="dm_tol" value="${d.tol||''}" placeholder="+/- 0.01"></div>
         <div class="form-group"><label>วันหมดอายุ</label>
-          <input type="text" id="dm_expiry" value="${d.expiry||''}" placeholder="17-Feb-2026"></div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="dm_expiry" value="${d.expiry||''}" placeholder="17-Feb-2026" style="flex:1">
+            <input type="date" id="dm_expiry_picker" style="width:36px;min-width:36px;padding:0;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);cursor:pointer;opacity:0;position:absolute" title="เลือกจากปฏิทิน"
+              onchange="(function(){const v=document.getElementById('dm_expiry_picker').value;if(!v)return;const d=new Date(v);const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('dm_expiry').value=String(d.getDate()).padStart(2,'0')+'-'+m[d.getMonth()]+'-'+d.getFullYear()})()">
+            <button type="button" title="เลือกจากปฏิทิน" onclick="document.getElementById('dm_expiry_picker').showPicker()" style="width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+              <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></svg>
+            </button>
+          </div>
+        </div>
         <div class="form-group"><label>ลักษณะ</label>
           <select id="dm_type">
             <option value="ภายนอก" ${(d.type||'ภายนอก')==='ภายนอก'?'selected':''}>ภายนอก</option>
