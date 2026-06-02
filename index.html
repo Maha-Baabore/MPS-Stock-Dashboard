@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.8.5</title>
+<title>MPS Stock Management System v1.9.0</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -792,11 +792,27 @@ canvas { max-width: 100%; }
 .header-user:hover { border-color: var(--danger); }
 .header-user-name { font-size: 0.82rem; color: var(--text2); }
 .logout-icon { width: 14px; height: 14px; color: var(--text3); }
-/* Viewer restrictions */
-body.viewer-mode .btn-submit,
+/* Viewer: ดูและ Export PDF เท่านั้น — ซ่อน borrow/return form, ซ่อน nav ที่ไม่อนุญาต */
+body.viewer-mode .btn-submit { opacity: 0.4; pointer-events: none; }
 body.viewer-mode #btnBorrow,
-body.viewer-mode #btnReturn,
-body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
+body.viewer-mode #btnReturn { opacity: 0.4; pointer-events: none; }
+/* Viewer ซ่อน nav: ยืม/คืน, Internal Test, Data Manage */
+body.viewer-mode [data-tab="borrow"],
+body.viewer-mode [data-tab="internaltest"],
+body.viewer-mode [data-tab="datamanage"] { display: none !important; }
+/* Viewer: ซ่อนปุ่ม Export CSV (ที่คลังสินค้า) */
+body.viewer-mode #exportStockPDFBtn { opacity: 1; pointer-events: auto; }
+
+/* User: ทำ Internal Test, Export PDF, ยืม-คืนได้ — ซ่อนแค่ Data Manage */
+body.user-mode [data-tab="datamanage"] { display: none !important; }
+/* User: ซ่อนปุ่ม add/edit/delete ใน Data Manage */
+body.user-mode .dm-add-btn,
+body.user-mode .dm-edit-btn,
+body.user-mode .dm-del-btn { display: none !important; }
+/* User: ซ่อนปุ่มล้างประวัติการทดสอบ */
+body.user-mode #clearTestHistoryBtn { display: none !important; }
+
+/* Admin: ทุกอย่าง — ไม่มีข้อจำกัด */
 /* Light mode login */
 :root.light .login-btn { color: #fff; }
 
@@ -892,7 +908,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.8.5</div>
+    <div class="login-footer">MPS Department · v1.9.0</div>
   </div>
 </div>
 
@@ -940,7 +956,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.8.5</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.9.0</span></div>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span>
@@ -1038,9 +1054,9 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
               <option value="low">ต่ำกว่าเกณฑ์</option>
               <option value="out">หมด</option>
             </select>
-            <button class="btn-export" onclick="exportCSV()">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Export
+            <button class="btn-export" id="exportStockPDFBtn" onclick="exportStockPDF()">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+              Export PDF
             </button>
           </div>
         </div>
@@ -1296,7 +1312,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
             <input type="text" id="instSearch" placeholder="ค้นหาชื่อ / รหัส / Model...">
           </div>
           <button class="btn-export" onclick="exportInstrumentsPDF()">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/><line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
             Export PDF
           </button>
         </div>
@@ -1381,7 +1397,7 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
           <span class="table-title">ประวัติการทดสอบ</span>
           <div style="display:flex;align-items:center;gap:10px">
             <span class="inst-count" id="testHistoryCount"></span>
-            <button onclick="clearTestHistory()" title="ล้างประวัติการทดสอบทั้งหมด" style="width:30px;height:30px;border-radius:var(--radius-sm);background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.25);color:var(--danger);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0" onmouseover="this.style.background='rgba(248,81,73,0.2)';this.style.borderColor='var(--danger)'" onmouseout="this.style.background='rgba(248,81,73,0.08)';this.style.borderColor='rgba(248,81,73,0.25)'">
+            <button id="clearTestHistoryBtn" onclick="clearTestHistory()" title="ล้างประวัติการทดสอบทั้งหมด" style="width:30px;height:30px;border-radius:var(--radius-sm);background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.25);color:var(--danger);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0" onmouseover="this.style.background='rgba(248,81,73,0.2)';this.style.borderColor='var(--danger)'" onmouseout="this.style.background='rgba(248,81,73,0.08)';this.style.borderColor='rgba(248,81,73,0.25)'">
               <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
           </div>
@@ -1480,6 +1496,12 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
 
 
     <div class="tab-content" id="tab-analytics">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+        <button class="btn-export" onclick="exportAnalyticsPDF()">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+          Export PDF
+        </button>
+      </div>
       <div class="analytics-grid">
         <div class="analytics-card span-2">
           <h4>การยืมสินค้าตามเวลา (รายเดือน)</h4>
@@ -1553,9 +1575,9 @@ body.viewer-mode .btn-export { opacity: 0.4; pointer-events: none; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.8.5 — app.js
+   MPS Stock Management System v1.9.0 — app.js
    Google Sheets (CSV export) → Dashboard
-   Security: XSS escaped, role guards, session expiry
+   Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
 
 // ──────────── CONFIG ────────────
@@ -1584,7 +1606,8 @@ function requireRole() {
   var allowedRoles = Array.prototype.slice.call(arguments);
   if (!currentUser) { showToast('กรุณาเข้าสู่ระบบ', 'error'); return false; }
   if (!allowedRoles.includes(currentUser.role)) {
-    showToast('คุณไม่มีสิทธิ์ดำเนินการนี้', 'error');
+    const roleLabel = { admin:'Admin', user:'User', viewer:'Viewer' }[currentUser.role] || currentUser.role;
+    showToast(`สิทธิ์ ${roleLabel} ไม่สามารถดำเนินการนี้ได้`, 'error');
     return false;
   }
   return true;
@@ -1935,10 +1958,28 @@ function getDemoBorrow() {
 }
 
 // ──────────── NAVIGATION ────────────
+// Tab permission map per role
+const TAB_PERMISSIONS = {
+  admin:  ['warehouse','borrow','report','instruments','internaltest','datamanage','analytics'],
+  user:   ['warehouse','borrow','report','instruments','internaltest','analytics'],
+  viewer: ['warehouse','report','instruments','analytics'],
+};
+
+function canAccessTab(tab) {
+  if (!currentUser) return false;
+  const role = currentUser.role || 'viewer';
+  const allowed = TAB_PERMISSIONS[role] || TAB_PERMISSIONS['viewer'];
+  return allowed.includes(tab);
+}
+
 function initNavigation() {
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
+      if (!canAccessTab(tab)) {
+        showToast('คุณไม่มีสิทธิ์เข้าถึงเมนูนี้', 'error');
+        return;
+      }
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -2532,7 +2573,88 @@ function drawTrendChart(canvasId, cat, color) {
 }
 
 
+function exportStockPDF() {
+  showToast('กำลังเตรียม Stock PDF...', 'info');
+  const catLabel = { flow:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
+  const stTh = { ok:'พร้อมใช้', low:'ต่ำกว่าเกณฑ์', out:'หมด' };
+  const stColor = { ok:'#16a34a', low:'#b07800', out:'#c0392b' };
+  const now = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+  const filtered = allStock.filter(i => currentCat === 'all' || i.category === currentCat);
+  const catTitle = currentCat === 'all' ? 'ทั้งหมด' : catLabel[currentCat] || currentCat;
+
+  const rows = filtered.map(i => {
+    const st = getStatus(i);
+    return `<tr>
+      <td style="font-family:monospace;font-size:10px;color:#0077cc">${escapeHtml(i.id)}</td>
+      <td style="font-weight:600">${escapeHtml(i.name)}</td>
+      <td>${catLabel[i.category]||i.category}</td>
+      <td style="font-family:monospace;font-size:10px">${escapeHtml(i.partNo||'—')}</td>
+      <td>${escapeHtml(i.brand||'—')}</td>
+      <td style="font-family:monospace;font-weight:700;text-align:center;color:${parseInt(i.qty)<=parseInt(i.minQty)?'#c0392b':'#1e293b'}">${i.qty||0}</td>
+      <td style="font-family:monospace;text-align:center;color:#64748b">${i.minQty||0}</td>
+      <td style="text-align:center">${escapeHtml(i.unit||'')}</td>
+      <td style="text-align:center"><span style="padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;background:${st==='ok'?'#f0fdf4':st==='low'?'#fffbeb':'#fef2f2'};color:${stColor[st]||'#333'}">${stTh[st]||st}</span></td>
+      <td style="color:#64748b;font-size:10px">${escapeHtml(i.location||'—')}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html lang="th"><head>
+  <meta charset="UTF-8">
+  <title>รายการสต็อก MPS — ${catTitle}</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Segoe UI',Arial,sans-serif; font-size:11px; color:#1e293b; padding:14mm 12mm; }
+    .header { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:8px; margin-bottom:14px; border-bottom:2.5px solid #1e3a5f; }
+    .title { font-size:15px; font-weight:700; }
+    .sub { font-size:9px; color:#64748b; margin-top:2px; }
+    .meta { text-align:right; font-size:9px; color:#64748b; }
+    .kpi-row { display:flex; gap:10px; margin-bottom:14px; }
+    .kpi { flex:1; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; text-align:center; }
+    .kpi strong { display:block; font-size:18px; font-weight:700; }
+    .kpi span { font-size:8px; color:#64748b; }
+    table { width:100%; border-collapse:collapse; font-size:10px; }
+    th { background:#1e3a5f; color:#fff; padding:6px 8px; text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:0.4px; }
+    td { padding:5px 8px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+    tr:nth-child(even) td { background:#fafafa; }
+    @media print { @page { margin:10mm; } body { padding:0; } }
+  </style></head><body>
+  <div class="header">
+    <div>
+      <div class="title">MPS Stock Management — รายการสต็อก</div>
+      <div class="sub">หมวดหมู่: ${catTitle} · พิมพ์โดย: ${escapeHtml(currentUser?.name||'—')}</div>
+    </div>
+    <div class="meta">วันที่: ${now}<br>รายการทั้งหมด: ${filtered.length} รายการ</div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><strong>${filtered.length}</strong><span>รายการทั้งหมด</span></div>
+    <div class="kpi" style="border-color:#bbf7d0"><strong style="color:#16a34a">${filtered.filter(i=>getStatus(i)==='ok').length}</strong><span>พร้อมใช้</span></div>
+    <div class="kpi" style="border-color:#fde68a"><strong style="color:#b07800">${filtered.filter(i=>getStatus(i)==='low').length}</strong><span>ต่ำกว่าเกณฑ์</span></div>
+    <div class="kpi" style="border-color:#fecaca"><strong style="color:#c0392b">${filtered.filter(i=>getStatus(i)==='out').length}</strong><span>หมด</span></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>รหัส</th><th>ชื่อสินค้า</th><th>หมวดหมู่</th><th>Part No.</th>
+      <th>ยี่ห้อ</th><th style="text-align:center">คงเหลือ</th><th style="text-align:center">Min</th>
+      <th style="text-align:center">หน่วย</th><th style="text-align:center">สถานะ</th><th>ที่เก็บ</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload=function(){window.print();};<\/script>
+  </body></html>`;
+
+  const blob = new Blob([html], { type:'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+  if (!win) {
+    const a = document.createElement('a');
+    a.href = url; a.download = `MPS_Stock_${catTitle}_${new Date().toISOString().split('T')[0]}.html`; a.click();
+    showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info');
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 function exportCSV() {
+  if (!requireRole('admin','user')) return;
   const headers = ['รหัสสินค้า','ชื่อสินค้า','หมวดหมู่','Part No.','ยี่ห้อ','คงเหลือ','Min Stock','หน่วย','สถานะ','ที่เก็บ'];
   const catLabel = { flow:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
   const stTh = { ok:'พร้อมใช้', low:'ต่ำกว่าเกณฑ์', out:'หมด' };
@@ -3045,6 +3167,114 @@ function exportInstrumentsPDF() {
 
 // updateHeader now handles instruments tab directly
 
+// ── Export Analytics as PDF (captures chart canvases as images)
+function exportAnalyticsPDF() {
+  showToast('กำลังเตรียม Analytics PDF...', 'info');
+  const now = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+  const printedBy = escapeHtml(currentUser?.name || '—');
+
+  // Helper: capture canvas → base64
+  function capImg(id) {
+    const c = document.getElementById(id);
+    if (!c) return '';
+    try { return c.toDataURL('image/png'); } catch(e) { return ''; }
+  }
+
+  function chartBlock(id, title, spanFull) {
+    const img = capImg(id);
+    const style = spanFull ? 'grid-column:span 2' : '';
+    return `<div class="chart-block" style="${style}">
+      <div class="chart-title">${title}</div>
+      ${img ? `<img src="${img}" style="width:100%;border-radius:6px;background:#fff">` : '<div style="color:#aaa;font-size:9pt;padding:20px;text-align:center">ไม่พบข้อมูล</div>'}
+    </div>`;
+  }
+
+  // KPI summary
+  const total  = allStock.length;
+  const ok     = allStock.filter(i => getStatus(i) === 'ok').length;
+  const low    = allStock.filter(i => getStatus(i) === 'low').length;
+  const out    = allStock.filter(i => getStatus(i) === 'out').length;
+  const active = allBorrow.filter(b => b.status === 'borrowed' || b.status === 'overdue').length;
+
+  const headerHtml = `<div class="header">
+    <div>
+      <div class="title">MPS Stock — Analytics Report</div>
+      <div class="sub">พิมพ์โดย: ${printedBy}</div>
+    </div>
+    <div class="meta">วันที่: ${now}</div>
+  </div>`;
+
+  const kpiHtml = `<div class="kpi-row">
+    <div class="kpi"><strong>${total}</strong><span>รายการสต็อกทั้งหมด</span></div>
+    <div class="kpi" style="border-color:#bbf7d0"><strong style="color:#16a34a">${ok}</strong><span>พร้อมใช้</span></div>
+    <div class="kpi" style="border-color:#fde68a"><strong style="color:#b07800">${low}</strong><span>ต่ำกว่าเกณฑ์</span></div>
+    <div class="kpi" style="border-color:#fecaca"><strong style="color:#c0392b">${out}</strong><span>หมด</span></div>
+    <div class="kpi" style="border-color:#bae6fd"><strong style="color:#0369a1">${active}</strong><span>รายการที่ยืมออก</span></div>
+  </div>`;
+
+  // Page 1: timeline (full) + category + stockStatus
+  const p1 = `<div class="charts-grid">
+    ${chartBlock('timelineChart',    'การยืมสินค้าตามเวลา (รายเดือน)', true)}
+    ${chartBlock('categoryChart',    'สัดส่วนตามหมวดหมู่',              false)}
+    ${chartBlock('stockStatusChart', 'สถานะสต็อกทั้งหมด',              false)}
+  </div>`;
+
+  // Page 2: Top 10 (full) + trendFC + trendGC
+  const p2 = `<div class="charts-grid">
+    ${chartBlock('topMovingChart', 'Top 10 สินค้าที่เคลื่อนไหวมากที่สุด', true)}
+    ${chartBlock('trendFC',        'แนวโน้มสต็อก (Flow Computer)',         false)}
+    ${chartBlock('trendGC',        'แนวโน้มสต็อก (Gas Chromatograph)',     false)}
+  </div>`;
+
+  const html = `<!DOCTYPE html><html lang="th"><head>
+  <meta charset="UTF-8">
+  <title>Analytics Report — MPS Stock</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Segoe UI',Arial,sans-serif; font-size:11px; color:#1e293b; padding:14mm 12mm; }
+    .header { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:8px; margin-bottom:12px; border-bottom:2.5px solid #1e3a5f; }
+    .title { font-size:15px; font-weight:700; }
+    .sub { font-size:9px; color:#64748b; margin-top:2px; }
+    .meta { text-align:right; font-size:9px; color:#64748b; }
+    .kpi-row { display:flex; gap:10px; margin-bottom:14px; }
+    .kpi { flex:1; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; text-align:center; }
+    .kpi strong { display:block; font-size:18px; font-weight:700; }
+    .kpi span { font-size:8px; color:#64748b; }
+    .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .chart-block { border:1px solid #e2e8f0; border-radius:8px; padding:10px; background:#fafafa; }
+    .chart-title { font-size:9px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:8px; }
+    .page-break { page-break-before:always; }
+    footer { margin-top:14px; font-size:7.5pt; color:#aaa; text-align:center; border-top:1px solid #eee; padding-top:6px; }
+    @media print {
+      @page { margin:10mm; size:A4 landscape; }
+      body { padding:0; }
+      .page-break { page-break-before:always; }
+    }
+  </style>
+</head><body>
+
+  <!-- PAGE 1: KPI + Timeline + สัดส่วน + สถานะ -->
+  ${headerHtml}
+  ${kpiHtml}
+  ${p1}
+
+  <!-- PAGE 2: Top 10 + แนวโน้ม -->
+  <div class="page-break">
+    ${headerHtml}
+    ${p2}
+  </div>
+
+  <footer>MPS Stock Management System · ${now}</footer>
+  <script>window.onload=function(){window.print();}<\/script>
+</body></html>`;
+
+  setTimeout(() => {
+    const win = window.open('', '_blank', 'width=1200,height=800');
+    if (win) { win.document.write(html); win.document.close(); }
+    else showToast('กรุณาอนุญาต popup เพื่อ export PDF', 'warn');
+  }, 200);
+}
+
 // Init instruments tab on navigation
 document.addEventListener('DOMContentLoaded', () => {
   // instruments rendered on tab click via loadAllData
@@ -3088,10 +3318,14 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.8.5
+   AUTH / LOGIN SYSTEM  v1.9.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
-   Roles: admin | user | viewer
+   ─────────────────────────────────────────────
+   SECURITY LEVELS:
+   admin  → ดูและแก้ไขได้ทุกอย่าง (full access)
+   user   → Internal Test, Export PDF, ยืม-คืน (no data manage)
+   viewer → ดูข้อมูล, Export PDF รายงาน (read-only)
    ============================================================ */
 
 let currentUser = null;
@@ -3204,12 +3438,22 @@ function showDashboard() {
     badgeEl.className = 'role-badge role-' + role;
   }
 
-  // Restrict viewer
-  if (role === 'viewer') {
-    document.body.classList.add('viewer-mode');
-    showToast(`ยินดีต้อนรับ ${currentUser.name} (Viewer — ดูข้อมูลได้อย่างเดียว)`, 'info');
-  } else {
-    showToast(`ยินดีต้อนรับ ${currentUser.name} (${role.toUpperCase()})`, 'success');
+  // Welcome + permission message per role
+  const roleMessages = {
+    admin:  `ยินดีต้อนรับ ${currentUser.name} (Admin — เข้าถึงได้ทุกฟังก์ชัน)`,
+    user:   `ยินดีต้อนรับ ${currentUser.name} (User — Internal Test, Export PDF, ยืม-คืน)`,
+    viewer: `ยินดีต้อนรับ ${currentUser.name} (Viewer — ดูข้อมูลและ Export PDF เท่านั้น)`,
+  };
+  const toastType = role === 'admin' ? 'success' : role === 'user' ? 'info' : 'warn';
+  showToast(roleMessages[role] || `ยินดีต้อนรับ ${currentUser.name}`, toastType);
+
+  // Navigate to a permitted tab if current tab is restricted
+  const restrictedForUser   = ['datamanage'];
+  const restrictedForViewer = ['datamanage', 'internaltest'];
+  if (role === 'viewer' && restrictedForViewer.includes(currentTab)) {
+    // will be handled by nav init; start on warehouse
+  } else if (role === 'user' && restrictedForUser.includes(currentTab)) {
+    // will be handled by nav init
   }
 
   // Load data
@@ -3245,8 +3489,9 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.8.5
+   INTERNAL TEST MODULE  v1.9.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
+   Access: Admin, User
    ============================================================ */
 
 // ── Checklist definitions from PDF
@@ -3534,6 +3779,7 @@ function resetChecklist() {
 
 // ── Save test result to history + add to stock
 function saveToStockFromTest() {
+  if (!requireRole('admin','user')) return;
   const mod = IT_MODULES[itCurrentMod];
   const allItems = mod.sections.flatMap(s => s.items);
   const passCount = Object.values(itResults).filter(v=>v==='pass').length;
@@ -3650,6 +3896,7 @@ function renderTestHistory() {
 }
 
 function clearTestHistory() {
+  if (!requireRole('admin')) return;
   if (!itTestHistory.length) { showToast('ไม่มีประวัติการทดสอบให้ล้าง', 'info'); return; }
   if (!confirm(`ล้างประวัติการทดสอบทั้งหมด ${itTestHistory.length} รายการใช่หรือไม่?`)) return;
   itTestHistory = [];
@@ -3880,8 +4127,9 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.8.5
+   DATA MANAGEMENT MODULE  v1.9.0
    CRUD for Stock + Instruments → writes to Google Sheets
+   Access: Admin only
    ============================================================ */
 
 let dmCurrentSub  = 'stock';
