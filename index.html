@@ -1542,6 +1542,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/></svg>
       ตั้งค่า Google Sheets</h3>
     <p class="modal-desc">กรอก Google Sheets ID และ Sheet Names เพื่อเชื่อมต่อข้อมูล</p>
+    <div id="cfgSource" style="font-size:0.78rem;margin-bottom:12px;padding:8px 12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border)"></div>
     <div class="form-group">
       <label>Spreadsheet ID</label>
       <input type="text" id="cfgSheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
@@ -1581,13 +1582,18 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
    ============================================================ */
 
 // ──────────── CONFIG ────────────
-const DEFAULT_CONFIG = {
-  sheetId: '',
-  stockSheet: 'Stock',
+// ─── Hardcoded defaults (fallback ถ้าไม่มีค่าใน localStorage) ───
+const HARDCODED_CONFIG = {
+  sheetId:     '1c5tiZzbtOpp_5PuRKpw4PbKcmHei_LWg9YZP3XhxcaE',
+  stockSheet:  'Stock',
   borrowSheet: 'BorrowReturn',
-  instSheet: 'Instruments',
-  gasUrl: ''   // Google Apps Script Web App URL
+  instSheet:   'Instruments',
+  gasUrl:      'https://script.google.com/macros/s/AKfycbxqLKfkiC_tkJwt4cgXQ8F4wuvoz5H0S_AeRh7GbkMIrAYhSBlgFQUjZh7gFi_jQ4sy/exec'
 };
+
+// Admin สามารถ override ผ่าน Settings UI → เก็บใน localStorage
+// ถ้า localStorage ว่าง → ใช้ HARDCODED_CONFIG โดยอัตโนมัติ
+const DEFAULT_CONFIG = { ...HARDCODED_CONFIG };
 
 let cfg = loadConfig();
 
@@ -1640,19 +1646,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const is = document.getElementById('instSearch');
   if (is) is.addEventListener('input', debounce(() => renderInstruments(), 200));
   // initNavigation/loadAllData called after login in showDashboard()
-  if (!cfg.sheetId) {
-    setTimeout(() => {
-      showToast('กรุณาตั้งค่า Google Sheets ID ด้วยปุ่ม ⚙️ ล่างซ้าย', 'info');
-    }, 800);
-  }
 });
 
 // ──────────── CONFIG ────────────
 function loadConfig() {
   try {
     const s = localStorage.getItem('mps_config');
-    return s ? { ...DEFAULT_CONFIG, ...JSON.parse(s) } : { ...DEFAULT_CONFIG };
-  } catch { return { ...DEFAULT_CONFIG }; }
+    // localStorage override → merge on top of hardcoded defaults
+    return s ? { ...HARDCODED_CONFIG, ...JSON.parse(s) } : { ...HARDCODED_CONFIG };
+  } catch { return { ...HARDCODED_CONFIG }; }
 }
 function saveConfig() {
   cfg.sheetId      = document.getElementById('cfgSheetId').value.trim();
@@ -1666,6 +1668,7 @@ function saveConfig() {
   loadAllData();
 }
 function openConfig() {
+  if (!requireRole('admin')) return;
   document.getElementById('cfgSheetId').value    = cfg.sheetId;
   document.getElementById('cfgStockSheet').value = cfg.stockSheet;
   document.getElementById('cfgBorrowSheet').value= cfg.borrowSheet;
@@ -1677,7 +1680,24 @@ function openConfig() {
       ? '<span style="color:var(--success)">✅ เชื่อมต่อแล้ว</span>' 
       : '<span style="color:var(--danger)">⚠️ ยังไม่ได้ตั้งค่า</span>';
   }
+  // แสดง badge ว่ากำลังใช้ hardcode หรือ override
+  const srcEl = document.getElementById('cfgSource');
+  if (srcEl) {
+    const hasOverride = !!localStorage.getItem('mps_config');
+    srcEl.innerHTML = hasOverride
+      ? '<span style="color:var(--accent2)">⚙️ ใช้ค่าที่แก้ไขโดย Admin</span> <button onclick="resetConfig()" style="margin-left:8px;font-size:0.72rem;padding:2px 8px;border-radius:20px;border:1px solid var(--danger);background:transparent;color:var(--danger);cursor:pointer">↩ Reset เป็นค่า Default</button>'
+      : '<span style="color:var(--text3)">🔒 ใช้ค่า Default จาก Code</span>';
+  }
   document.getElementById('configModal').style.display = 'flex';
+}
+
+function resetConfig() {
+  if (!confirm('รีเซ็ตการตั้งค่าทั้งหมดกลับเป็นค่า Default จาก Code?')) return;
+  localStorage.removeItem('mps_config');
+  cfg = { ...HARDCODED_CONFIG };
+  closeConfig();
+  showToast('รีเซ็ตเป็นค่า Default แล้ว', 'success');
+  loadAllData();
 }
 function closeConfig() { document.getElementById('configModal').style.display = 'none'; }
 
@@ -3724,7 +3744,7 @@ function renderITChecklist() {
         <div class="it-form-title" style="margin-bottom:0"><svg viewBox="0 0 24 24" fill="none" style="width:15px;height:15px;vertical-align:-2px;margin-right:6px"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${mod.title}</div>
         <div style="display:flex;gap:7px;flex-shrink:0;align-items:center">
           <button class="btn-export" onclick="exportTestPDF()" style="white-space:nowrap">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/><line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
             Export PDF
           </button>
           <button class="btn-export" onclick="resetChecklist()" style="white-space:nowrap">
