@@ -1850,14 +1850,17 @@ async function loadAllData() {
     }
   }
 
-  renderWarehouse();
-  renderBorrowList();
-  generateReport();
-  renderAnalytics();
-  populateBorrowSelect();
-  if (currentTab === 'instruments') renderInstruments();
   setSyncStatus(usingDemo && cfg.sheetId ? 'warn' : 'ok');
   isLoading = false;
+
+  setTimeout(() => {
+    renderWarehouse();
+    renderBorrowList();
+    generateReport();
+    renderAnalytics();
+    populateBorrowSelect();
+    if (currentTab === 'instruments') renderInstruments();
+  }, 0);
 }
 
 function setSyncStatus(state) {
