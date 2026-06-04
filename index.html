@@ -881,6 +881,9 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 }
 .ver-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; box-shadow:0 0 5px var(--accent); animation:pulse 2s infinite; }
 .ver-num { font-family:var(--mono); font-size:0.7rem; color:var(--text3); letter-spacing:0.3px; }
+
+#instTable th,
+#instTable td { text-align: center; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -1331,7 +1334,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
           <table id="instTable">
             <thead>
               <tr>
-                <th>#</th>
+                <th>Item</th>
                 <th>รหัส</th>
                 <th>ชื่อเครื่องมือ</th>
                 <th>ผู้เก็บรักษา</th>
