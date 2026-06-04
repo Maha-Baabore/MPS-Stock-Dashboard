@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.9.0</title>
+<title>MPS Stock Management System v1.9.1</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -113,9 +113,20 @@ body {
   padding: 10px 14px;
   border-top: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
 }
-.sync-status { display: flex; align-items: center; gap: 7px; }
+.sidebar-footer-left { display: flex; align-items: center; gap: 8px; }
+.sync-btn-sidebar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text2); transition: all 0.2s;
+  flex-shrink: 0;
+}
+.sync-btn-sidebar svg { width: 13px; height: 13px; transition: transform 0.5s ease; }
+.sync-btn-sidebar:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent); }
+.sync-btn-sidebar.spinning svg { animation: spin 0.6s linear; }
+.sync-status { display: flex; align-items: center; gap: 6px; }
 .sync-dot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--success);
@@ -125,8 +136,9 @@ body {
 @keyframes pulse {
   0%,100% { opacity: 1; } 50% { opacity: 0.4; }
 }
-.sync-text { font-size: 0.75rem; color: var(--text3); }
-/* .sync-btn removed — merged into header refresh button */
+.sync-status-info { display: flex; flex-direction: column; gap: 1px; }
+.sync-text { font-size: 0.72rem; color: var(--text3); }
+.sync-time-text { font-family: var(--mono); font-size: 0.68rem; color: var(--text3); }
 
 /* ===== MAIN CONTENT ===== */
 .main-content {
@@ -686,26 +698,10 @@ canvas { max-width: 100%; }
 
 
 /* ===== REFRESH GROUP ===== */
-.refresh-group {
-  display: flex; align-items: center; gap: 6px;
-}
-.last-sync {
-  font-family: var(--mono); font-size: 0.72rem; color: var(--text3);
-  white-space: nowrap;
-}
-.last-sync::before { content: "sync "; }
-
-/* ===== REFRESH BUTTON ===== */
+/* ===== REFRESH BUTTON (header, kept for spinner class) ===== */
 .refresh-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--bg3); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--text2); transition: all 0.2s;
-  flex-shrink: 0;
+  display: none; /* moved to sidebar */
 }
-.refresh-btn svg { width: 15px; height: 15px; transition: transform 0.5s ease; }
-.refresh-btn:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent); }
-.refresh-btn.spinning svg { animation: spin 0.6s linear; }
 
 /* ===== THEME TOGGLE BUTTON ===== */
 .theme-toggle {
@@ -911,7 +907,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.9.0</div>
+    <div class="login-footer">MPS Department · v1.9.1</div>
   </div>
 </div>
 
@@ -959,11 +955,19 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.9.0</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.9.1</span></div>
     <div class="sidebar-footer">
-      <div class="sync-status" id="syncStatus">
-        <span class="sync-dot"></span>
-        <span class="sync-text" id="syncText">พร้อมใช้งาน</span>
+      <div class="sidebar-footer-left">
+        <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="sync-status" id="syncStatus">
+          <span class="sync-dot"></span>
+          <div class="sync-status-info">
+            <span class="sync-text" id="syncText">พร้อมใช้งาน</span>
+            <span class="sync-time-text" id="lastSync">—</span>
+          </div>
+        </div>
       </div>
       <button class="config-fab" onclick="openConfig()" title="ตั้งค่า Google Sheets">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/></svg>
@@ -987,12 +991,6 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="เปลี่ยนธีม">
           <svg id="themeIcon" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <div class="refresh-group">
-          <button class="refresh-btn" onclick="manualRefresh()" title="รีเฟรชข้อมูล" id="refreshBtn">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <span class="last-sync" id="lastSync">—</span>
-        </div>
         <div class="header-time" id="headerTime"></div>
         <div class="header-user" id="headerUser" onclick="doLogout()" title="ออกจากระบบ" style="display:none">
           <span class="role-badge role-admin" id="userRoleBadge">ADMIN</span>
@@ -1579,7 +1577,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.9.0 — app.js
+   MPS Stock Management System v1.9.1 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1870,6 +1868,7 @@ function setSyncStatus(state) {
     dot.style.background = 'var(--warn)';
     dot.style.boxShadow  = '0 0 6px var(--warn)';
     if (text) text.textContent = 'กำลังโหลด...';
+    if (lastSync) lastSync.textContent = '';
   } else if (state === 'warn') {
     dot.style.background = 'var(--warn)';
     dot.style.boxShadow  = '0 0 6px var(--warn)';
@@ -1880,8 +1879,8 @@ function setSyncStatus(state) {
     dot.style.boxShadow  = '0 0 6px var(--success)';
     const now = new Date();
     const t   = now.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
-    if (text)     text.textContent = `ซิงค์ ${t}`;
-    if (lastSync) lastSync.textContent = t;
+    if (text)     text.textContent = 'พร้อมใช้งาน';
+    if (lastSync) lastSync.textContent = `sync ${t}`;
   }
 }
 
@@ -3310,10 +3309,10 @@ const MOON_ICON = `<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke=
 const SUN_ICON  = `<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
 
 function manualRefresh() {
-  const btn = document.getElementById('refreshBtn');
-  btn.classList.add('spinning');
+  const btn = document.getElementById('syncBtnSidebar');
+  if (btn) btn.classList.add('spinning');
   loadAllData().finally(() => {
-    setTimeout(() => btn.classList.remove('spinning'), 600);
+    setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 600);
   });
 }
 
@@ -3341,7 +3340,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.9.0
+   AUTH / LOGIN SYSTEM  v1.9.1
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3512,7 +3511,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.9.0
+   INTERNAL TEST MODULE  v1.9.1
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -4150,7 +4149,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.9.0
+   DATA MANAGEMENT MODULE  v1.9.1
    CRUD for Stock + Instruments → writes to Google Sheets
    Access: Admin only
    ============================================================ */
