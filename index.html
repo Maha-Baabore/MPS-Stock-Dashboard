@@ -276,7 +276,7 @@ tbody tr:last-child td { border-bottom: none; }
 .cat-dot::before {
   content: ''; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
 }
-.cat-flow::before { background: var(--flow); }
+.cat-fc::before { background: var(--flow); }
 .cat-gc::before { background: var(--gc); }
 .cat-acc::before { background: var(--acc); }
 
@@ -1038,7 +1038,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <!-- Category Tabs -->
       <div class="category-tabs">
         <button class="cat-tab active" data-cat="all">ทั้งหมด</button>
-        <button class="cat-tab" data-cat="flow">Flow Computer</button>
+        <button class="cat-tab" data-cat="fc">Flow Computer</button>
         <button class="cat-tab" data-cat="gc">Gas Chromatograph</button>
         <button class="cat-tab" data-cat="acc">Accessories</button>
       </div>
@@ -1205,7 +1205,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
           <label>หมวดหมู่</label>
           <select id="reportCat" onchange="generateReport()">
             <option value="all">ทั้งหมด</option>
-            <option value="flow">Flow Computer</option>
+            <option value="fc">Flow Computer</option>
             <option value="gc">Gas Chromatograph</option>
             <option value="acc">Accessories</option>
           </select>
@@ -1755,7 +1755,7 @@ function parseCSV(text) {
     // Normalise category: FC→flow, GC→gc, AC/ACC→acc
     if (obj.category !== undefined) {
       const c = obj.category.toLowerCase().trim();
-      if      (c === 'fc' || c === 'flow' || c === 'flow computer') obj.category = 'flow';
+      if      (c === 'fc' || c === 'flow' || c === 'flow computer') obj.category = 'fc';
       else if (c === 'gc' || c === 'online gc' || c === 'gas chromatograph') obj.category = 'gc';
       else if (c === 'ac' || c === 'acc' || c === 'accessories' || c === 'accessory') obj.category = 'acc';
     }
@@ -1904,14 +1904,14 @@ function parseInstrumentsSheet(rows) {
 function getDemoStock() {
   return [
     // Flow Computer Spare Parts
-    { id:'FC-001', name:'Power Supply Module 24VDC',  category:'flow', partNo:'PS-2400-A', brand:'Emerson', qty:'5',  minQty:'2', unit:'ชิ้น', location:'A1-01', status:'ok'  },
-    { id:'FC-002', name:'Display Module 4-line LCD',   category:'flow', partNo:'DM-LCD4',  brand:'ABB',     qty:'2',  minQty:'2', unit:'ชิ้น', location:'A1-02', status:'low' },
-    { id:'FC-003', name:'Communication Card RS-485',   category:'flow', partNo:'CC-485B',  brand:'Emerson', qty:'8',  minQty:'3', unit:'ชิ้น', location:'A1-03', status:'ok'  },
-    { id:'FC-004', name:'Battery Backup 3.6V',         category:'flow', partNo:'BAT-36',   brand:'Generic', qty:'12', minQty:'5', unit:'ก้อน', location:'A1-04', status:'ok'  },
-    { id:'FC-005', name:'Keypad Membrane 16-key',      category:'flow', partNo:'KP-16M',   brand:'ABB',     qty:'1',  minQty:'2', unit:'ชิ้น', location:'A1-05', status:'low' },
-    { id:'FC-006', name:'I/O Module 4-20mA',           category:'flow', partNo:'IO-420',   brand:'Emerson', qty:'4',  minQty:'2', unit:'ชิ้น', location:'A1-06', status:'ok'  },
-    { id:'FC-007', name:'Ethernet Switch Module',       category:'flow', partNo:'ETH-SW4',  brand:'MOXA',    qty:'0',  minQty:'1', unit:'ชิ้น', location:'A1-07', status:'out' },
-    { id:'FC-008', name:'Enclosure Seal Kit',           category:'flow', partNo:'SK-IP65',  brand:'Generic', qty:'20', minQty:'10',unit:'ชุด', location:'A1-08', status:'ok'  },
+    { id:'FC-001', name:'Power Supply Module 24VDC',  category:'fc', partNo:'PS-2400-A', brand:'Emerson', qty:'5',  minQty:'2', unit:'ชิ้น', location:'A1-01', status:'ok'  },
+    { id:'FC-002', name:'Display Module 4-line LCD',   category:'fc', partNo:'DM-LCD4',  brand:'ABB',     qty:'2',  minQty:'2', unit:'ชิ้น', location:'A1-02', status:'low' },
+    { id:'FC-003', name:'Communication Card RS-485',   category:'fc', partNo:'CC-485B',  brand:'Emerson', qty:'8',  minQty:'3', unit:'ชิ้น', location:'A1-03', status:'ok'  },
+    { id:'FC-004', name:'Battery Backup 3.6V',         category:'fc', partNo:'BAT-36',   brand:'Generic', qty:'12', minQty:'5', unit:'ก้อน', location:'A1-04', status:'ok'  },
+    { id:'FC-005', name:'Keypad Membrane 16-key',      category:'fc', partNo:'KP-16M',   brand:'ABB',     qty:'1',  minQty:'2', unit:'ชิ้น', location:'A1-05', status:'low' },
+    { id:'FC-006', name:'I/O Module 4-20mA',           category:'fc', partNo:'IO-420',   brand:'Emerson', qty:'4',  minQty:'2', unit:'ชิ้น', location:'A1-06', status:'ok'  },
+    { id:'FC-007', name:'Ethernet Switch Module',       category:'fc', partNo:'ETH-SW4',  brand:'MOXA',    qty:'0',  minQty:'1', unit:'ชิ้น', location:'A1-07', status:'out' },
+    { id:'FC-008', name:'Enclosure Seal Kit',           category:'fc', partNo:'SK-IP65',  brand:'Generic', qty:'20', minQty:'10',unit:'ชุด', location:'A1-08', status:'ok'  },
 
     // Gas Chromatograph Spare Parts
     { id:'GC-001', name:'Detector FID Filament',       category:'gc',   partNo:'FID-FIL',  brand:'Siemens', qty:'3',  minQty:'2', unit:'ชิ้น', location:'B2-01', status:'ok'  },
@@ -2037,7 +2037,7 @@ function getStatus(item) {
 function renderStockTable(items) {
   const tbody = document.getElementById('stockTableBody');
   if (!items.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:24px">ไม่พบข้อมูล</td></tr>'; return; }
-  const catLabel = { flow:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
+  const catLabel = { fc:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
   tbody.innerHTML = items.map(item => {
     const st = getStatus(item);
     const bdg = st === 'ok' ? 'badge-ok' : st === 'low' ? 'badge-low' : 'badge-out';
@@ -2325,7 +2325,7 @@ function renderAnalytics() {
   drawCategoryChart();
   drawStockStatusChart();
   drawTopMovingChart();
-  drawTrendChart('trendFC', 'flow', CHART_COLORS.teal);
+  drawTrendChart('trendFC', 'fc', CHART_COLORS.teal);
   drawTrendChart('trendGC', 'gc',   CHART_COLORS.blue);
 }
 
@@ -2545,7 +2545,7 @@ function drawTrendChart(canvasId, cat, color) {
     data: {
       labels: monthLabels,
       datasets: [{
-        label: cat === 'flow' ? 'Flow Computer' : 'Gas Chromatograph',
+        label: cat === 'fc' ? 'Flow Computer' : 'Gas Chromatograph',
         data: pts,
         borderColor: color,
         borderWidth: 2.5,
@@ -2575,7 +2575,7 @@ function drawTrendChart(canvasId, cat, color) {
 
 function exportStockPDF() {
   showToast('กำลังเตรียม Stock PDF...', 'info');
-  const catLabel = { flow:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
+  const catLabel = { fc:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
   const stTh = { ok:'พร้อมใช้', low:'ต่ำกว่าเกณฑ์', out:'หมด' };
   const stColor = { ok:'#16a34a', low:'#b07800', out:'#c0392b' };
   const now = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
@@ -2656,7 +2656,7 @@ function exportStockPDF() {
 function exportCSV() {
   if (!requireRole('admin','user')) return;
   const headers = ['รหัสสินค้า','ชื่อสินค้า','หมวดหมู่','Part No.','ยี่ห้อ','คงเหลือ','Min Stock','หน่วย','สถานะ','ที่เก็บ'];
-  const catLabel = { flow:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
+  const catLabel = { fc:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
   const stTh = { ok:'พร้อมใช้', low:'ต่ำกว่าเกณฑ์', out:'หมด' };
   const rows = allStock.map(i => [i.id,i.name,catLabel[i.category]||i.category,i.partNo,i.brand,i.qty,i.minQty,i.unit,stTh[getStatus(i)],i.location].join(','));
   const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
@@ -3553,12 +3553,12 @@ const IT_MODULES = {
 
 // ── Map module to stock item for "add to stock"
 const MODULE_TO_STOCK = {
-  fc_full:    { id:'FC-FULL', name:'Flow Computer FloBoss S600+ (Complete)', category:'flow', brand:'Emerson', unit:'ชุด' },
-  backplane:  { id:'FC-BP',   name:'Backplane FloBoss S600+',               category:'flow', brand:'Emerson', unit:'ชิ้น' },
-  cpu:        { id:'FC-CPU',  name:'CPU Module FloBoss S600+',              category:'flow', brand:'Emerson', unit:'ชิ้น' },
-  frontpanel: { id:'FC-FP',   name:'Front Panel FloBoss S600+',             category:'flow', brand:'Emerson', unit:'ชิ้น' },
-  hart:       { id:'FC-HART', name:'HART Module FloBoss S600+',             category:'flow', brand:'Emerson', unit:'ชิ้น' },
-  io:         { id:'FC-IO',   name:'I/O Module FloBoss S600+',              category:'flow', brand:'Emerson', unit:'ชิ้น' },
+  fc_full:    { id:'FC-FULL', name:'Flow Computer FloBoss S600+ (Complete)', category:'fc', brand:'Emerson', unit:'ชุด' },
+  backplane:  { id:'FC-BP',   name:'Backplane FloBoss S600+',               category:'fc', brand:'Emerson', unit:'ชิ้น' },
+  cpu:        { id:'FC-CPU',  name:'CPU Module FloBoss S600+',              category:'fc', brand:'Emerson', unit:'ชิ้น' },
+  frontpanel: { id:'FC-FP',   name:'Front Panel FloBoss S600+',             category:'fc', brand:'Emerson', unit:'ชิ้น' },
+  hart:       { id:'FC-HART', name:'HART Module FloBoss S600+',             category:'fc', brand:'Emerson', unit:'ชิ้น' },
+  io:         { id:'FC-IO',   name:'I/O Module FloBoss S600+',              category:'fc', brand:'Emerson', unit:'ชิ้น' },
 };
 
 let itCurrentMod  = '';   // ว่างจนกว่าจะเลือก
@@ -4157,7 +4157,7 @@ function renderDMTable(type) {
   if (type === 'stock') {
     const tbody = document.getElementById('dm-stock-tbody');
     if (!tbody) return;
-    const catLabel = { flow:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
+    const catLabel = { fc:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
     tbody.innerHTML = allStock.map((item, idx) => `
       <tr>
         <td style="font-family:var(--mono);font-size:0.8rem;color:var(--accent2)">${item.id||''}</td>
@@ -4209,6 +4209,12 @@ function renderDMTable(type) {
 }
 
 // ── Open modal
+// Helper: safe value from dmModalData (avoids undefined errors on add mode)
+function _dv(field) {
+  const d = dmModalData || {};
+  return escapeHtml(d[field] || '');
+}
+
 function openDMModal(type, mode, idx) {
   dmModalType = type;
   dmModalMode = mode;
@@ -4232,7 +4238,7 @@ function openDMModal(type, mode, idx) {
           <input type="text" id="dm_name" value="${escapeHtml(d.name||'')}" placeholder="ชื่อสินค้า"></div>
         <div class="form-group"><label>หมวดหมู่</label>
           <select id="dm_cat">
-            <option value="flow" ${d.category==='flow'?'selected':''}>Flow Computer</option>
+            <option value="fc" ${d.category==='fc'?'selected':''}>Flow Computer</option>
             <option value="gc"   ${d.category==='gc'  ?'selected':''}>Gas Chromatograph</option>
             <option value="acc"  ${d.category==='acc' ?'selected':''}>Accessories</option>
           </select></div>
