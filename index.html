@@ -2424,7 +2424,7 @@ function drawCategoryChart() {
   const el = document.getElementById('categoryChart');
   if (!el) return;
   const d = chartDefaults();
-  const counts = { flow: 0, gc: 0, acc: 0 };
+  const counts = { fc: 0, gc: 0, acc: 0 };
   allStock.forEach(i => { if (counts[i.category] !== undefined) counts[i.category]++; });
 
   setChart('category', new Chart(el, {
@@ -2432,7 +2432,7 @@ function drawCategoryChart() {
     data: {
       labels: ['Flow Computer', 'Gas Chromatograph', 'Accessories'],
       datasets: [{
-        data: [counts.flow, counts.gc, counts.acc],
+        data: [counts.fc, counts.gc, counts.acc],
         backgroundColor: [CHART_COLORS.teal + 'dd', CHART_COLORS.blue + 'dd', CHART_COLORS.orange + 'dd'],
         borderColor: [CHART_COLORS.teal, CHART_COLORS.blue, CHART_COLORS.orange],
         borderWidth: 2,
