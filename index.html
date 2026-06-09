@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.9.1</title>
+<title>MPS Stock Management System v1.9.2</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -907,7 +907,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.9.1</div>
+    <div class="login-footer">MPS Department · v1.9.2</div>
   </div>
 </div>
 
@@ -955,7 +955,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.9.1</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.9.2</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1408,6 +1408,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
             <thead>
               <tr>
                 <th>วันที่</th>
+                <th>เวลาบันทึก</th>
                 <th>Module</th>
                 <th>Serial Number</th>
                 <th>ทดสอบโดย</th>
@@ -1418,7 +1419,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
               </tr>
             </thead>
             <tbody id="testHistoryBody">
-              <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>
+              <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>
             </tbody>
           </table>
         </div>
@@ -1577,7 +1578,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.9.1 — app.js
+   MPS Stock Management System v1.9.2 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1607,6 +1608,18 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// ── Timestamp helper — returns "DD/MM/YYYY HH:mm:ss"
+function fmtTimestamp(d) {
+  if (!d) d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mi = String(d.getMinutes()).padStart(2,'0');
+  const ss = String(d.getSeconds()).padStart(2,'0');
+  return `${dd}/${mm}/${yy} ${hh}:${mi}:${ss}`;
 }
 
 function requireRole() {
@@ -2190,9 +2203,11 @@ async function submitBorrow() {
   }
 
   const newId = 'BR-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(-2).toUpperCase();
+  const ts = fmtTimestamp();
   const record = { id:newId, borrower:name, dept, itemId:item,
     itemName:stockItem.name, qty:String(qty),
-    borrowDate:date, dueDate:due, returnDate:'', status:'borrowed', purpose:purp };
+    borrowDate:date, dueDate:due, returnDate:'', status:'borrowed', purpose:purp,
+    timestamp:ts, actionBy: currentUser?.name || '—' };
 
   // Optimistic UI update
   stockItem.qty = String(parseInt(stockItem.qty) - qty);
@@ -2223,6 +2238,7 @@ async function submitReturn() {
   const rec = allBorrow.find(b => b.id === id);
   if (!rec) return;
   rec.status = 'returned'; rec.returnDate = date; rec.returnNote = note;
+  rec.returnTimestamp = fmtTimestamp(); rec.returnBy = currentUser?.name || '—';
 
   // Return to stock
   const stockItem = allStock.find(i => i.id === rec.itemId);
@@ -2253,13 +2269,13 @@ function renderBorrowList() {
     const cls = { borrowed:'badge-borrowed', returned:'badge-returned', overdue:'badge-overdue' }[b.status] || '';
     const stTh = { borrowed:'กำลังยืม', returned:'คืนแล้ว', overdue:'เกินกำหนด' }[b.status] || b.status;
     return `<tr>
-      <td><span style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${escapeHtml(b.id)}</span></td>
+      <td><span style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${escapeHtml(b.id)}</span>${b.timestamp ? '<br><span style="font-size:0.68rem;color:var(--text3);opacity:0.7">' + escapeHtml(b.timestamp) + '</span>' : ''}</td>
       <td style="color:var(--text)">${escapeHtml(b.borrower)}<br><span style="font-size:0.75rem;color:var(--text3)">${escapeHtml(b.dept)}</span></td>
       <td>${escapeHtml(b.itemName)}</td>
       <td style="font-family:var(--mono)">${parseInt(b.qty)||0}</td>
       <td style="font-family:var(--mono);font-size:0.82rem">${escapeHtml(b.borrowDate)}</td>
       <td style="font-family:var(--mono);font-size:0.82rem;color:${b.status==='overdue'?'var(--danger)':'var(--text2)'}">${escapeHtml(b.dueDate)}</td>
-      <td><span class="badge ${cls}">${stTh}</span></td>
+      <td><span class="badge ${cls}">${stTh}</span>${b.status==='returned' && b.returnTimestamp ? '<br><span style="font-size:0.65rem;color:var(--text3)">คืน: '+escapeHtml(b.returnTimestamp)+'</span>' : ''}</td>
     </tr>`;
   }).join('');
 }
@@ -3343,7 +3359,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.9.1
+   AUTH / LOGIN SYSTEM  v1.9.2
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3514,7 +3530,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.9.1
+   INTERNAL TEST MODULE  v1.9.2
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3821,6 +3837,7 @@ function saveToStockFromTest() {
   const tester = document.getElementById('it_tester')?.value || currentUser?.name || '—';
 
   // Save to history
+  const ts = fmtTimestamp();
   const record = {
     id: 'IT-' + Date.now().toString().slice(-6),
     date, module: itCurrentMod, moduleTitle: mod.title,
@@ -3833,6 +3850,7 @@ function saveToStockFromTest() {
     passCount, failCount, total: allItems.length,
     overall: failCount === 0 ? 'pass' : passCount > 0 ? 'partial' : 'fail',
     inStock: false,
+    timestamp: ts,
     results: { ...itResults }, remarks: { ...itRemarks }
   };
   itTestHistory.unshift(record);
@@ -3850,6 +3868,7 @@ function saveToStockFromTest() {
       failCount: record.failCount,
       total: record.total,
       overall: record.overall,
+      timestamp: record.timestamp,
     });
   }
 
@@ -3899,7 +3918,7 @@ function renderTestHistory() {
   if (!tbody) return;
   document.getElementById('testHistoryCount').textContent = `${itTestHistory.length} รายการ`;
   if (!itTestHistory.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>';
     return;
   }
   tbody.innerHTML = itTestHistory.map(r => {
@@ -3909,6 +3928,7 @@ function renderTestHistory() {
     const sns   = Object.values(r.serialNumbers||{}).filter(Boolean).join(', ') || '—';
     return `<tr>
       <td style="font-family:var(--mono);font-size:0.8rem">${r.date}</td>
+      <td style="font-family:var(--mono);font-size:0.75rem;color:var(--text3)">${r.timestamp||'—'}</td>
       <td style="font-weight:500">${r.moduleTitle}</td>
       <td style="font-family:var(--mono);font-size:0.78rem;color:var(--text3)">${sns}</td>
       <td>${r.tester}</td>
@@ -4152,7 +4172,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.9.1
+   DATA MANAGEMENT MODULE  v1.9.2
    CRUD for Stock + Instruments → writes to Google Sheets
    Access: Admin only
    ============================================================ */
@@ -4183,10 +4203,12 @@ function renderDMTable(type) {
     const tbody = document.getElementById('dm-stock-tbody');
     if (!tbody) return;
     const catLabel = { fc:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
-    tbody.innerHTML = allStock.map((item, idx) => `
+    tbody.innerHTML = allStock.map((item, idx) => {
+      const tsInfo = item.updatedAt ? 'แก้ไข: '+item.updatedAt+(item.updatedBy?' โดย '+item.updatedBy:'') : item.createdAt ? 'เพิ่ม: '+item.createdAt+(item.createdBy?' โดย '+item.createdBy:'') : '';
+      return `
       <tr>
         <td style="font-family:var(--mono);font-size:0.8rem;color:var(--accent2)">${item.id||''}</td>
-        <td style="font-weight:500">${item.name||''}</td>
+        <td style="font-weight:500">${item.name||''}${tsInfo?'<br><span style="font-size:0.65rem;color:var(--text3);opacity:0.7;font-weight:400">'+escapeHtml(tsInfo)+'</span>':''}</td>
         <td><span class="cat-dot cat-${item.category}">${catLabel[item.category]||item.category}</span></td>
         <td style="font-family:var(--mono);font-size:0.8rem">${item.partNo||'—'}</td>
         <td>${item.brand||'—'}</td>
@@ -4202,7 +4224,7 @@ function renderDMTable(type) {
             <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
         </td>
-      </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ไม่มีข้อมูล</td></tr>';
+      </tr>`; }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ไม่มีข้อมูล</td></tr>';
   } else {
     const tbody = document.getElementById('dm-inst-tbody');
     if (!tbody) return;
@@ -4210,9 +4232,10 @@ function renderDMTable(type) {
       const st  = getInstStatus(inst);
       const stCls = { valid:'badge-valid', soon:'badge-soon', expired:'badge-expired', removed:'badge-removed' }[st] || '';
       const stTh  = { valid:'ใช้ได้', soon:'ใกล้หมด', expired:'หมดอายุ', removed:'ยกเลิก' }[st] || '';
+      const tsInfo = inst.updatedAt ? 'แก้ไข: '+inst.updatedAt+(inst.updatedBy?' โดย '+inst.updatedBy:'') : inst.createdAt ? 'เพิ่ม: '+inst.createdAt+(inst.createdBy?' โดย '+inst.createdBy:'') : '';
       return `<tr>
         <td style="font-family:var(--mono);font-size:0.8rem;color:var(--accent2)">${inst.id||''}</td>
-        <td style="font-weight:500">${inst.name||''}</td>
+        <td style="font-weight:500">${inst.name||''}${tsInfo?'<br><span style="font-size:0.65rem;color:var(--text3);opacity:0.7;font-weight:400">'+escapeHtml(tsInfo)+'</span>':''}</td>
         <td>${inst.owner||''}</td>
         <td>${inst.mfr||''}</td>
         <td style="font-family:var(--mono);font-size:0.8rem">${inst.model||''}</td>
@@ -4361,10 +4384,14 @@ async function saveDMModal() {
 
     if (mode === 'add') {
       if (allStock.find(i => i.id === id)) { showToast('รหัสสินค้านี้มีอยู่แล้ว', 'error'); return; }
+      record.createdAt = fmtTimestamp();
+      record.createdBy = currentUser?.name || '—';
       allStock.push(record);
     } else {
+      record.updatedAt = fmtTimestamp();
+      record.updatedBy = currentUser?.name || '—';
       const idx = allStock.findIndex(i => i.id === id);
-      if (idx >= 0) allStock[idx] = record;
+      if (idx >= 0) { record.createdAt = allStock[idx].createdAt || ''; record.createdBy = allStock[idx].createdBy || ''; allStock[idx] = record; }
     }
 
     // Write to Sheets
@@ -4402,10 +4429,14 @@ async function saveDMModal() {
 
     if (mode === 'add') {
       if (allInstruments.find(i => i.id === id)) { showToast('รหัสนี้มีอยู่แล้ว', 'error'); return; }
+      record.createdAt = fmtTimestamp();
+      record.createdBy = currentUser?.name || '—';
       allInstruments.push(record);
     } else {
+      record.updatedAt = fmtTimestamp();
+      record.updatedBy = currentUser?.name || '—';
       const idx = allInstruments.findIndex(i => i.id === id);
-      if (idx >= 0) allInstruments[idx] = record;
+      if (idx >= 0) { record.createdAt = allInstruments[idx].createdAt || ''; record.createdBy = allInstruments[idx].createdBy || ''; allInstruments[idx] = record; }
     }
 
     // Write to Sheets
