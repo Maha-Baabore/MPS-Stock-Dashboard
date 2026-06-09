@@ -2026,6 +2026,7 @@ function initNavigation() {
       updateHeader(tab);
       if (tab === 'analytics') renderAnalytics();
       if (tab === 'report') generateReport();
+      if (tab === 'borrow') { populateBorrowSelect(); renderBorrowList(); }
       if (tab === 'instruments') { updateOwnerFilter(); renderInstruments(); }
       if (tab === 'internaltest') initInternalTest();
       if (tab === 'datamanage') initDataManage();
