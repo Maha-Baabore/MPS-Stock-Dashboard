@@ -1833,9 +1833,9 @@ async function loadAllData() {
         gSheetCSV(cfg.borrowSheet),
         gSheetCSV(cfg.instSheet)
       ]);
-      // Stock
+      // Stock — normalized against Material Master (dedupe + canonical names)
       if (stock.length) {
-        allStock = stock;
+        allStock = normalizeStock(stock);
       } else {
         allStock = getDemoStock();
         usingDemo = true;
@@ -3595,13 +3595,67 @@ const IT_MODULES = {
 };
 
 // ── Map module to stock item for "add to stock"
+/* ═══════════════════════════════════════════════
+   MATERIAL MASTER DATA  v1.9.2
+   Single source of truth: code → description mapping
+   (SAP-style: same product = same ID, one canonical name)
+   ═══════════════════════════════════════════════ */
+const MATERIAL_MASTER = {
+  // ── Flow Computer
+  'FC-001':  { name:'CPU Module FloBoss S600+',                 category:'fc',  partNo:'1550',         brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
+  'FC-002':  { name:'I/O Module FloBoss S600+',                 category:'fc',  partNo:'1441',         brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
+  'FC-003':  { name:'HART Module FloBoss S600+',                category:'fc',  partNo:'1880',         brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
+  'FC-FULL': { name:'Flow Computer FloBoss S600+ (Complete)',   category:'fc',  partNo:'—',            brand:'Emerson',       unit:'ชุด',  location:'Store' },
+  'FC-BP':   { name:'Backplane FloBoss S600+',                  category:'fc',  partNo:'—',            brand:'Emerson',       unit:'EA.',  location:'Store' },
+  'FC-FP':   { name:'Front Panel FloBoss S600+',                category:'fc',  partNo:'—',            brand:'Emerson',       unit:'EA.',  location:'Store' },
+  // ── Accessories
+  'AC-001':  { name:'Interconnect Board',                       category:'acc', partNo:'RS SD37B LP3R', brand:'Weidmuller',   unit:'pcs.', location:'FL.2' },
+};
+
+// Look up canonical material data; returns null if code not in master
+function getMaterial(id) {
+  return MATERIAL_MASTER[(id||'').trim().toUpperCase()] || null;
+}
+
+// Normalize stock rows against Material Master:
+// 1. Apply canonical name/category/partNo/brand/unit per ID
+// 2. Merge duplicate IDs (sum qty, keep max minQty)
+function normalizeStock(rows) {
+  const byId = new Map();
+  rows.forEach(row => {
+    const id = (row.id||'').trim().toUpperCase();
+    if (!id) return;
+    const master = getMaterial(id);
+    // Apply canonical attributes from master (master always wins for descriptive fields)
+    const norm = { ...row, id };
+    if (master) {
+      norm.name     = master.name;
+      norm.category = master.category;
+      norm.partNo   = master.partNo;
+      norm.brand    = master.brand;
+      norm.unit     = master.unit;
+      if (!norm.location || norm.location === '—') norm.location = master.location;
+    }
+    if (byId.has(id)) {
+      // Duplicate ID → merge: sum qty, keep max minQty, keep earliest createdAt
+      const ex = byId.get(id);
+      ex.qty    = String((parseInt(ex.qty)||0) + (parseInt(norm.qty)||0));
+      ex.minQty = String(Math.max(parseInt(ex.minQty)||0, parseInt(norm.minQty)||0));
+      console.warn(`Material Master: merged duplicate ID "${id}" (qty combined → ${ex.qty})`);
+    } else {
+      byId.set(id, norm);
+    }
+  });
+  return Array.from(byId.values());
+}
+
 const MODULE_TO_STOCK = {
-  fc_full:    { id:'FC-FULL', name:'Flow Computer FloBoss S600+ (Complete)', category:'fc', brand:'Emerson', unit:'ชุด' },
-  backplane:  { id:'FC-BP',   name:'Backplane FloBoss S600+',               category:'fc', brand:'Emerson', unit:'ชิ้น' },
-  cpu:        { id:'FC-001',  name:'CPU Module',                            category:'fc', brand:'Emerson', unit:'EA.' },
-  frontpanel: { id:'FC-FP',   name:'Front Panel FloBoss S600+',             category:'fc', brand:'Emerson', unit:'ชิ้น' },
-  hart:       { id:'FC-003',  name:'HART Module',                           category:'fc', brand:'Emerson', unit:'EA.' },
-  io:         { id:'FC-002',  name:'I/O Module',                            category:'fc', brand:'Emerson', unit:'EA.' },
+  fc_full:    { id:'FC-FULL', ...MATERIAL_MASTER['FC-FULL'] },
+  backplane:  { id:'FC-BP',   ...MATERIAL_MASTER['FC-BP'] },
+  cpu:        { id:'FC-001',  ...MATERIAL_MASTER['FC-001'] },
+  frontpanel: { id:'FC-FP',   ...MATERIAL_MASTER['FC-FP'] },
+  hart:       { id:'FC-003',  ...MATERIAL_MASTER['FC-003'] },
+  io:         { id:'FC-002',  ...MATERIAL_MASTER['FC-002'] },
 };
 
 let itCurrentMod  = '';   // ว่างจนกว่าจะเลือก
@@ -4393,7 +4447,7 @@ async function saveDMModal() {
   const type = dmModalType;
 
   if (type === 'stock') {
-    const id = document.getElementById('dm_id').value.trim();
+    const id = document.getElementById('dm_id').value.trim().toUpperCase();
     const name = document.getElementById('dm_name').value.trim();
     if (!id || !name) { showToast('กรุณากรอก รหัส และ ชื่อสินค้า', 'warn'); return; }
 
@@ -4408,6 +4462,17 @@ async function saveDMModal() {
       location: document.getElementById('dm_location').value.trim(),
       status:   document.getElementById('dm_status').value,
     };
+
+    // Material Master: enforce canonical description for known codes
+    const master = getMaterial(id);
+    if (master && record.name !== master.name) {
+      record.name     = master.name;
+      record.category = master.category;
+      record.partNo   = master.partNo;
+      record.brand    = master.brand;
+      record.unit     = master.unit;
+      showToast(`ℹ️ รหัส ${id} อยู่ใน Material Master — ใช้ชื่อมาตรฐาน "${master.name}"`, 'info');
+    }
 
     if (mode === 'add') {
       if (allStock.find(i => i.id === id)) { showToast('รหัสสินค้านี้มีอยู่แล้ว', 'error'); return; }
