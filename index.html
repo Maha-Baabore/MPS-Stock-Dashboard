@@ -1407,8 +1407,8 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
           <table>
             <thead>
               <tr>
-                <th>วันที่</th>
-                <th>เวลาบันทึก</th>
+                <th style="white-space:nowrap;min-width:90px">วันที่</th>
+                <th style="white-space:nowrap">เวลาบันทึก</th>
                 <th>Module</th>
                 <th>Serial Number</th>
                 <th>ทดสอบโดย</th>
@@ -1416,10 +1416,11 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
                 <th>Pass</th>
                 <th>Fail</th>
                 <th>สถานะคลัง</th>
+                <th style="width:40px">ลบ</th>
               </tr>
             </thead>
             <tbody id="testHistoryBody">
-              <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>
+              <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>
             </tbody>
           </table>
         </div>
@@ -3597,10 +3598,10 @@ const IT_MODULES = {
 const MODULE_TO_STOCK = {
   fc_full:    { id:'FC-FULL', name:'Flow Computer FloBoss S600+ (Complete)', category:'fc', brand:'Emerson', unit:'ชุด' },
   backplane:  { id:'FC-BP',   name:'Backplane FloBoss S600+',               category:'fc', brand:'Emerson', unit:'ชิ้น' },
-  cpu:        { id:'FC-CPU',  name:'CPU Module FloBoss S600+',              category:'fc', brand:'Emerson', unit:'ชิ้น' },
+  cpu:        { id:'FC-001',  name:'CPU Module',                            category:'fc', brand:'Emerson', unit:'EA.' },
   frontpanel: { id:'FC-FP',   name:'Front Panel FloBoss S600+',             category:'fc', brand:'Emerson', unit:'ชิ้น' },
-  hart:       { id:'FC-HART', name:'HART Module FloBoss S600+',             category:'fc', brand:'Emerson', unit:'ชิ้น' },
-  io:         { id:'FC-IO',   name:'I/O Module FloBoss S600+',              category:'fc', brand:'Emerson', unit:'ชิ้น' },
+  hart:       { id:'FC-003',  name:'HART Module',                           category:'fc', brand:'Emerson', unit:'EA.' },
+  io:         { id:'FC-002',  name:'I/O Module',                            category:'fc', brand:'Emerson', unit:'EA.' },
 };
 
 let itCurrentMod  = '';   // ว่างจนกว่าจะเลือก
@@ -3887,16 +3888,17 @@ function saveToStockFromTest() {
     localStorage.setItem('mps_test_history', JSON.stringify(itTestHistory.slice(0,100)));
     renderWarehouse();
     // Write to Google Sheets Stock sheet via GAS
+    const stockRef = existing || stockDef;
     if (cfg.gasUrl && cfg.sheetId) {
       const payload = {
         action:    'updateStock',
         sheetId:   cfg.sheetId,
         stockSheet: cfg.stockSheet || 'Stock',
-        id:        stockDef.id,
-        name:      stockDef.name,
-        category:  stockDef.category,
-        brand:     stockDef.brand,
-        unit:      stockDef.unit,
+        id:        stockRef.id,
+        name:      stockRef.name,
+        category:  stockRef.category || stockDef.category,
+        brand:     stockRef.brand || stockDef.brand,
+        unit:      stockRef.unit || stockDef.unit,
         delta:     1,
         serialNumber: Object.values(record.serialNumbers||{}).filter(Boolean).join(', '),
       };
@@ -3919,17 +3921,20 @@ function renderTestHistory() {
   if (!tbody) return;
   document.getElementById('testHistoryCount').textContent = `${itTestHistory.length} รายการ`;
   if (!itTestHistory.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>';
     return;
   }
-  tbody.innerHTML = itTestHistory.map(r => {
+  tbody.innerHTML = itTestHistory.map((r, idx) => {
     const ovCls = r.overall==='pass' ? 'badge-pass-all' : r.overall==='partial' ? 'badge-partial' : 'badge-has-fail';
     const ovTh  = r.overall==='pass' ? 'Pass ทั้งหมด' : r.overall==='partial' ? 'บางส่วน' : 'มี Fail';
     const stk   = r.inStock ? '<span class="badge badge-in-stock">เข้าคลังแล้ว</span>' : '<span class="badge badge-not-saved">ยังไม่เพิ่ม</span>';
     const sns   = Object.values(r.serialNumbers||{}).filter(Boolean).join(', ') || '—';
+    // Convert YYYY-MM-DD → DD/MM/YYYY
+    const dateParts = (r.date||'').split('-');
+    const dateDisplay = dateParts.length===3 ? dateParts[2]+'/'+dateParts[1]+'/'+dateParts[0] : r.date||'—';
     return `<tr>
-      <td style="font-family:var(--mono);font-size:0.8rem">${r.date}</td>
-      <td style="font-family:var(--mono);font-size:0.75rem;color:var(--text3)">${r.timestamp||'—'}</td>
+      <td style="font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${dateDisplay}</td>
+      <td style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);white-space:nowrap">${r.timestamp||'—'}</td>
       <td style="font-weight:500">${r.moduleTitle}</td>
       <td style="font-family:var(--mono);font-size:0.78rem;color:var(--text3)">${sns}</td>
       <td>${r.tester}</td>
@@ -3937,6 +3942,11 @@ function renderTestHistory() {
       <td style="color:var(--success);font-weight:700;font-family:var(--mono)">${r.passCount}</td>
       <td style="color:${r.failCount>0?'var(--danger)':'var(--text3)'};font-weight:700;font-family:var(--mono)">${r.failCount}</td>
       <td>${stk}</td>
+      <td style="text-align:center">
+        <button onclick="deleteTestHistoryItem(${idx})" title="ลบรายการนี้" style="width:26px;height:26px;border-radius:var(--radius-sm);background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.2);color:var(--danger);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='rgba(248,81,73,0.25)'" onmouseout="this.style.background='rgba(248,81,73,0.08)'">
+          <svg viewBox="0 0 24 24" fill="none" style="width:12px;height:12px"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -3949,6 +3959,17 @@ function clearTestHistory() {
   localStorage.setItem('mps_test_history', '[]');
   renderTestHistory();
   showToast('🗑️ ล้างประวัติการทดสอบทั้งหมดแล้ว', 'success');
+}
+
+function deleteTestHistoryItem(idx) {
+  if (!requireRole('admin','user')) return;
+  const item = itTestHistory[idx];
+  if (!item) return;
+  if (!confirm(`ลบประวัติ "${item.moduleTitle}" วันที่ ${item.date} ใช่หรือไม่?`)) return;
+  itTestHistory.splice(idx, 1);
+  localStorage.setItem('mps_test_history', JSON.stringify(itTestHistory.slice(0,100)));
+  renderTestHistory();
+  showToast('🗑️ ลบรายการทดสอบแล้ว', 'success');
 }
 
 // ── Export PDF  v1.7.2
