@@ -4435,7 +4435,7 @@ function renderDMTable(type) {
           </button>
         </td>
       </tr>`; }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ไม่มีข้อมูล</td></tr>';
-  } else {
+  } else if (type === 'instruments') {
     const tbody = document.getElementById('dm-inst-tbody');
     if (!tbody) return;
     tbody.innerHTML = allInstruments.map((inst, idx) => {

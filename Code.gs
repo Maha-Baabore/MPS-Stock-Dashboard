@@ -1,404 +1,305 @@
-// ============================================================
-//  MPS Stock — Google Apps Script Backend  v1.7.0
-//  วิธีติดตั้ง:
-//  1. เปิด Google Sheets → Extensions → Apps Script
-//  2. วางโค้ดนี้ทั้งหมดแทนที่โค้ดเดิม → Save (Ctrl+S)
-//  3. Deploy → Manage deployments → ✏️ → New version → Deploy
-// ============================================================
+/* ════════════════════════════════════════════════════════════════
+   MPS Stock Management System — Google Apps Script backend
+   Complete Code.gs for dashboard v1.10.0
+   ----------------------------------------------------------------
+   This is a FULL replacement file. Select all in your Code.gs,
+   delete, paste this, Save, then DEPLOY A NEW VERSION:
+     Deploy → Manage deployments → (pencil/Edit) → Version: New version → Deploy
+   Saving alone does NOT update the live web app.
+   ----------------------------------------------------------------
+   Design notes:
+   - All writes come in as GET requests with URL params (no-cors POST
+     cannot send a body), so everything is read from e.parameter.
+   - Column mapping is HEADER-BASED: the script reads row 1 of each
+     sheet and matches by column name, so column order can change
+     without breaking writes. New columns the frontend sends are
+     auto-appended to the header row.
+   ════════════════════════════════════════════════════════════════ */
 
-const BORROW_SHEET = 'BorrowReturn';
-const USERS_SHEET  = 'Users';
-const SPREADSHEET_ID = '1c5tiZzbtOpp_5PuRKpw4PbKcmHei_LWg9YZP3XhxcaE'; // ← Spreadsheet ID ของคุณ
-
-const BORROW_COLS = ['id','borrower','dept','itemId','itemName','qty',
-                     'borrowDate','dueDate','returnDate','status','purpose','returnNote'];
-
-// ── เปิด Spreadsheet ด้วย ID (รองรับทั้ง hardcode และจาก payload)
-function getSpreadsheet(data) {
-  const id = (data && data.sheetId) ? data.sheetId : SPREADSHEET_ID;
-  return SpreadsheetApp.openById(id);
-}
-
-// ── รับ GET request (Dashboard ส่งแบบ GET + URL params เพราะ no-cors)
 function doGet(e) {
-  const res = ContentService.createTextOutput();
-  res.setMimeType(ContentService.MimeType.JSON);
+  var lock = LockService.getScriptLock();
   try {
-    const p = e.parameter || {};
-    // Health check
-    if (!p.action) {
-      res.setContent(JSON.stringify({ ok: true, msg: 'MPS Stock GAS v1.7.0 — ready' }));
-      return res;
-    }
-    // Map params to data object
-    const data = {};
-    Object.keys(p).forEach(k => { data[k] = p[k]; });
-
-    let result;
-    if      (data.action === 'addBorrow')    result = addBorrow(data);
-    else if (data.action === 'updateReturn') result = updateReturn(data);
-    else if (data.action === 'login')        result = verifyLogin(data);
-    else if (data.action === 'updateStock')  result = updateStockItem(data);
-    else if (data.action === 'updateStockItem') result = updateStockRow(data);
-    else if (data.action === 'addTestHistory')  result = addTestHistory(data);
-    else if (data.action === 'addStockItem')    result = addStockItem(data);
-    else if (data.action === 'updateStockRow')  result = updateStockRow(data);
-    else if (data.action === 'deleteStockItem') result = deleteStockItem(data);
-    else if (data.action === 'addInstrument')   result = addInstrument(data);
-    else if (data.action === 'updateInstrument')result = updateInstrument(data);
-    else if (data.action === 'deleteInstrument')result = deleteInstrument(data);
-    else                                     result = { ok: false, msg: 'Unknown action: ' + data.action };
-
-    res.setContent(JSON.stringify(result));
-  } catch(err) {
-    res.setContent(JSON.stringify({ ok: false, msg: err.toString() }));
+    lock.waitLock(20000); // serialize writes to avoid race conditions
+  } catch (err) {
+    return jsonOut_({ ok: false, error: 'busy, try again' });
   }
-  return res;
-}
 
-// ── doPost รองรับไว้เผื่อ (redirect ไป doGet)
-function doPost(e) {
-  return doGet(e);
-}
-
-// ──────────── BORROW ────────────
-function addBorrow(data) {
   try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.borrowSheet || BORROW_SHEET);
-    if (!sheet) return { ok: false, msg: `Sheet "${BORROW_SHEET}" not found` };
-    ensureHeader(sheet, BORROW_COLS);
-    const row = BORROW_COLS.map(col => data[col] || '');
-    sheet.appendRow(row);
-    updateStockQty(data.itemId, -parseInt(data.qty || 0), data);
-    return { ok: true, msg: 'addBorrow success', id: data.id };
-  } catch(e) {
-    return { ok: false, msg: e.toString() };
-  }
-}
+    var action = (e && e.parameter && e.parameter.action) || '';
+    switch (action) {
 
-// ──────────── RETURN ────────────
-function updateReturn(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.borrowSheet || BORROW_SHEET);
-    if (!sheet) return { ok: false, msg: `Sheet "${BORROW_SHEET}" not found` };
+      // ── Stock ──────────────────────────────────────────────
+      case 'updateStock':                 // delta-based qty change (from Internal Test pass)
+        return updateStockDelta_(e);
+      case 'addStockItem':
+        return upsertRow_(e, e.parameter.stockSheet || 'Stock');
+      case 'updateStockItem':
+        return upsertRow_(e, e.parameter.stockSheet || 'Stock');
+      case 'deleteStockItem':
+        return deleteRow_(e, e.parameter.stockSheet || 'Stock');
 
-    const rows = sheet.getDataRange().getValues();
-    const idCol         = BORROW_COLS.indexOf('id');
-    const statusCol     = BORROW_COLS.indexOf('status');
-    const returnDateCol = BORROW_COLS.indexOf('returnDate');
-    const noteCol       = BORROW_COLS.indexOf('returnNote');
-    const qtyCol        = BORROW_COLS.indexOf('qty');
-    const itemCol       = BORROW_COLS.indexOf('itemId');
+      // ── Instruments ────────────────────────────────────────
+      case 'addInstrument':
+        return upsertRow_(e, e.parameter.instSheet || 'Instruments');
+      case 'updateInstrument':
+        return upsertRow_(e, e.parameter.instSheet || 'Instruments');
+      case 'deleteInstrument':
+        return deleteRow_(e, e.parameter.instSheet || 'Instruments');
 
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idCol]) === String(data.id)) {
-        const rowNum = i + 1;
-        sheet.getRange(rowNum, statusCol + 1).setValue('returned');
-        sheet.getRange(rowNum, returnDateCol + 1).setValue(data.returnDate);
-        if (noteCol >= 0) sheet.getRange(rowNum, noteCol + 1).setValue(data.note || '');
-        updateStockQty(rows[i][itemCol], parseInt(rows[i][qtyCol] || 0), data);
-        return { ok: true, msg: 'updateReturn success' };
-      }
+      // ── Borrow / Return ────────────────────────────────────
+      case 'addBorrow':
+        return upsertRow_(e, e.parameter.borrowSheet || 'BorrowReturn');
+      case 'updateReturn':
+        return updateReturn_(e);
+
+      // ── Test History ───────────────────────────────────────
+      case 'addTestHistory':
+        return addTestHistory_(e);
+
+      // ── Material Master ────────────────────────────────────
+      case 'addMaterial':
+      case 'updateMaterial':
+        return upsertRow_(e, e.parameter.materialsSheet || 'Materials',
+                          ['id','name','category','partNo','brand','unit','location']);
+      case 'deleteMaterial':
+        return deleteRow_(e, e.parameter.materialsSheet || 'Materials');
+
+      default:
+        return jsonOut_({ ok: false, error: 'unknown action: ' + action });
     }
-    return { ok: false, msg: `BorrowID ${data.id} not found` };
-  } catch(e) {
-    return { ok: false, msg: e.toString() };
+  } catch (err) {
+    return jsonOut_({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
   }
 }
 
-// ──────────── STOCK QTY UPDATE ────────────
-function updateStockQty(itemId, delta, data) {
-  try {
-    if (!itemId || delta === 0) return;
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName('Stock');
-    if (!sheet) return;
-    const rows    = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx   = headers.findIndex(h => h === 'id');
-    const qtyIdx  = headers.findIndex(h => h === 'qty');
-    if (idIdx < 0 || qtyIdx < 0) return;
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idIdx]).trim() === String(itemId).trim()) {
-        const newQty = Math.max(0, parseInt(rows[i][qtyIdx] || 0) + delta);
-        sheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
-        return;
-      }
-    }
-  } catch(e) { console.log('updateStockQty error:', e.toString()); }
-}
+/* ════════════════════════════════════════════════════════════════
+   CORE HELPERS
+   ════════════════════════════════════════════════════════════════ */
 
-// ──────────── UPDATE STOCK ITEM (from Internal Test) ────────────
-function updateStockItem(data) {
-  try {
-    const ss        = getSpreadsheet(data);
-    const sheetName = data.stockSheet || 'Stock';
-    const sheet     = ss.getSheetByName(sheetName);
-    if (!sheet) return { ok: false, msg: `Sheet "${sheetName}" not found` };
-
-    const rows    = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx   = headers.findIndex(h => h === 'id');
-    const qtyIdx  = headers.findIndex(h => h === 'qty');
-    if (idIdx < 0 || qtyIdx < 0) return { ok: false, msg: 'Missing id/qty columns in Stock sheet' };
-
-    const delta = parseInt(data.delta || 1);
-
-    // Find and update existing row
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
-        const newQty = Math.max(0, parseInt(rows[i][qtyIdx] || 0) + delta);
-        sheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
-        return { ok: true, msg: `Updated ${data.id} qty to ${newQty}` };
-      }
-    }
-
-    // Not found → append new row
-    const STOCK_COLS = ['id','name','category','partNo','brand','qty','minQty','unit','location','status'];
-    ensureHeader(sheet, STOCK_COLS);
-    const newRow = STOCK_COLS.map(col => {
-      const map = { id:data.id||'', name:data.name||'', category:data.category||'flow',
-                    partNo:'—', brand:data.brand||'Emerson', qty:String(delta),
-                    minQty:'1', unit:data.unit||'ชิ้น', location:'—', status:'ok' };
-      return map[col] !== undefined ? map[col] : '';
-    });
-    sheet.appendRow(newRow);
-    return { ok: true, msg: `Added new item ${data.id}` };
-  } catch(e) {
-    return { ok: false, msg: e.toString() };
+function getSheet_(e, sheetName, seedHeaders) {
+  var ss = SpreadsheetApp.openById(e.parameter.sheetId);
+  var sh = ss.getSheetByName(sheetName);
+  if (!sh) {
+    sh = ss.insertSheet(sheetName);
+    if (seedHeaders && seedHeaders.length) sh.appendRow(seedHeaders);
   }
+  return sh;
 }
 
-// ──────────── LOGIN ────────────
-function verifyLogin(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(USERS_SHEET);
-    if (!sheet) return { ok: false, msg: 'Users sheet not found — using local fallback' };
-
-    const rows    = sheet.getDataRange().getValues();
-    if (rows.length < 2) return { ok: false, msg: 'No users in sheet' };
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const uIdx = headers.indexOf('username');
-    const pIdx = headers.indexOf('password');
-    const rIdx = headers.indexOf('role');
-    const nIdx = headers.indexOf('name');
-    const aIdx = headers.indexOf('active');
-
-    for (let i = 1; i < rows.length; i++) {
-      const row    = rows[i];
-      const active = aIdx >= 0 ? String(row[aIdx]).toLowerCase() : 'true';
-      if (active === 'false') continue;
-      if (String(row[uIdx]).toLowerCase() === String(data.username).toLowerCase() &&
-          String(row[pIdx]) === String(data.password)) {
-        return { ok: true, username: row[uIdx],
-                 name: nIdx >= 0 ? row[nIdx] : row[uIdx],
-                 role: rIdx >= 0 ? String(row[rIdx]).toLowerCase() : 'viewer' };
-      }
-    }
-    return { ok: false, msg: 'Invalid credentials' };
-  } catch(e) {
-    return { ok: false, msg: e.toString() };
-  }
+// Return the header row (row 1) as an array of trimmed strings.
+function getHeaders_(sh) {
+  if (sh.getLastRow() < 1) return [];
+  var lastCol = Math.max(1, sh.getLastColumn());
+  return sh.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) {
+    return String(h).trim();
+  });
 }
 
-// ──────────── HELPER ────────────
-function ensureHeader(sheet, cols) {
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(cols);
-    return;
-  }
-  const firstCell = String(sheet.getRange(1,1).getValue()).toLowerCase().trim();
-  if (firstCell !== cols[0].toLowerCase()) {
-    sheet.insertRowBefore(1);
-    sheet.getRange(1, 1, 1, cols.length).setValues([cols]);
-  }
-}
-
-// ──────────── STOCK CRUD ────────────
-function addStockItem(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.stockSheet || 'Stock');
-    if (!sheet) return { ok:false, msg:'Stock sheet not found' };
-    const COLS = ['id','name','category','partNo','brand','qty','minQty','unit','location','status'];
-    ensureHeader(sheet, COLS);
-    // Check duplicate
-    const rows = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx = headers.indexOf('id');
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idIdx]).trim() === String(data.id).trim())
-        return { ok:false, msg:'Duplicate ID: ' + data.id };
-    }
-    sheet.appendRow(COLS.map(c => data[c] || ''));
-    return { ok:true, msg:'addStockItem success' };
-  } catch(e) { return { ok:false, msg:e.toString() }; }
-}
-
-function updateStockRow(data) {
-  // Full row update (not just qty delta)
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.stockSheet || 'Stock');
-    if (!sheet) return { ok:false, msg:'Stock sheet not found' };
-    const COLS = ['id','name','category','partNo','brand','qty','minQty','unit','location','status'];
-    const rows = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx = headers.indexOf('id');
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
-        const newRow = COLS.map(c => {
-          const hi = headers.indexOf(c.toLowerCase());
-          return data[c] !== undefined ? data[c] : (hi >= 0 ? rows[i][hi] : '');
-        });
-        sheet.getRange(i+1, 1, 1, newRow.length).setValues([newRow]);
-        return { ok:true, msg:'updateStockRow success' };
-      }
-    }
-    return { ok:false, msg:'Item not found: ' + data.id };
-  } catch(e) { return { ok:false, msg:e.toString() }; }
-}
-
-function deleteStockItem(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.stockSheet || 'Stock');
-    if (!sheet) return { ok:false, msg:'Stock sheet not found' };
-    const rows = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx = headers.indexOf('id');
-    for (let i = rows.length - 1; i >= 1; i--) {
-      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
-        sheet.deleteRow(i + 1);
-        return { ok:true, msg:'deleteStockItem success' };
-      }
-    }
-    return { ok:false, msg:'Item not found: ' + data.id };
-  } catch(e) { return { ok:false, msg:e.toString() }; }
-}
-
-// ──────────── INSTRUMENTS CRUD ────────────
-const INST_COLS = ['id','name','owner','mfr','model','sn','range','tol','freq','type','expiry','remark'];
-
-// Map จาก field key ที่ dashboard ส่งมา → ชื่อ header ที่เป็นไปได้ใน Google Sheets
-const INST_HEADER_ALIASES = {
-  'id':     ['id','รหัส','code'],
-  'name':   ['name','ชื่อเครื่องมือ','ชื่อ','instrument'],
-  'owner':  ['owner','ผู้เก็บรักษา','keeper','ผู้รับผิดชอบ'],
-  'mfr':    ['mfr','manufacturer','brand','ยี่ห้อ'],
-  'model':  ['model','รุ่น'],
-  'sn':     ['sn','s/n','serial','serialnumber'],
-  'range':  ['range','ช่วง'],
-  'tol':    ['tol','tolerance','ค่าความคลาดเคลื่อน','error'],
-  'freq':   ['freq','frequency','interval','ความถี่'],
-  'type':   ['type','calibration','ลักษณะ','method'],
-  'expiry': ['expiry','expire','วันหมดอายุ','หมดอายุ','expirydate'],
-  'remark': ['remark','หมายเหตุ','note','remark/note'],
-};
-
-// หา column index ใน sheet จาก aliases
-function findInstCol(headers, field) {
-  const aliases = INST_HEADER_ALIASES[field] || [field];
-  for (const alias of aliases) {
-    const idx = headers.findIndex(h => h.replace(/[\s\/\-_]/g,'').toLowerCase() === alias.replace(/[\s\/\-_]/g,'').toLowerCase());
-    if (idx >= 0) return idx;
+// Find the column index (0-based) of a header, case/space-insensitive.
+function headerIndex_(headers, name) {
+  var target = String(name).toLowerCase().replace(/[\s_]/g, '');
+  for (var i = 0; i < headers.length; i++) {
+    if (String(headers[i]).toLowerCase().replace(/[\s_]/g, '') === target) return i;
   }
   return -1;
 }
 
-function addInstrument(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
-    if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
+/* Generic upsert: writes all incoming params (except control keys) to a row,
+   keyed by the "id" column. Inserts if id not found, updates otherwise.
+   If a param has no matching header column, the header is auto-appended. */
+function upsertRow_(e, sheetName, seedHeaders) {
+  var p = e.parameter;
+  var id = String(p.id || '').trim();
+  if (!id) return jsonOut_({ ok: false, error: 'missing id' });
 
-    const rows    = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+  var sh = getSheet_(e, sheetName, seedHeaders);
+  if (sh.getLastRow() === 0 && seedHeaders) sh.appendRow(seedHeaders);
 
-    // Check duplicate by id
-    const idColIdx = findInstCol(headers, 'id');
-    if (idColIdx >= 0) {
-      for (let i = 1; i < rows.length; i++) {
-        if (String(rows[i][idColIdx]).trim() === String(data.id).trim())
-          return { ok:false, msg:'Duplicate ID: ' + data.id };
+  var headers = getHeaders_(sh);
+  if (!headers.length) {
+    // No header row yet — seed from incoming keys
+    headers = Object.keys(p).filter(isDataKey_);
+    if (headers.indexOf('id') < 0) headers.unshift('id');
+    sh.appendRow(headers);
+  }
+
+  // Collect the data fields the frontend sent (skip control keys)
+  var dataKeys = Object.keys(p).filter(isDataKey_);
+
+  // Auto-append any new columns the sheet doesn't have yet
+  var appended = false;
+  dataKeys.forEach(function (k) {
+    if (headerIndex_(headers, k) < 0) {
+      headers.push(k);
+      appended = true;
+    }
+  });
+  if (appended) {
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+
+  // Build the row in header order
+  var idCol = headerIndex_(headers, 'id');
+
+  // Find existing row by id
+  var lastRow = sh.getLastRow();
+  var foundRow = -1;
+  if (lastRow >= 2) {
+    var idColValues = sh.getRange(2, idCol + 1, lastRow - 1, 1).getValues();
+    for (var i = 0; i < idColValues.length; i++) {
+      if (String(idColValues[i][0]).trim().toLowerCase() === id.toLowerCase()) {
+        foundRow = i + 2;
+        break;
       }
     }
+  }
 
-    // Build new row matching existing headers
-    const newRow = rows[0].map((h, colIdx) => {
-      const hNorm = String(h).toLowerCase().trim();
-      // Find which field this header belongs to
-      for (const [field, aliases] of Object.entries(INST_HEADER_ALIASES)) {
-        const match = aliases.some(a => a.replace(/[\s\/\-_]/g,'').toLowerCase() === hNorm.replace(/[\s\/\-_]/g,'').toLowerCase());
-        if (match && data[field] !== undefined) return data[field];
-      }
-      return '';
+  if (foundRow > 0) {
+    // UPDATE: overwrite only the columns the frontend sent; keep others intact
+    var existing = sh.getRange(foundRow, 1, 1, headers.length).getValues()[0];
+    dataKeys.forEach(function (k) {
+      var ci = headerIndex_(headers, k);
+      if (ci >= 0) existing[ci] = p[k];
     });
-    sheet.appendRow(newRow);
-    return { ok:true, msg:'addInstrument success' };
-  } catch(e) { return { ok:false, msg:e.toString() }; }
+    sh.getRange(foundRow, 1, 1, headers.length).setValues([existing]);
+    return jsonOut_({ ok: true, id: id, mode: 'update', row: foundRow });
+  } else {
+    // INSERT
+    var row = headers.map(function (h) {
+      var key = dataKeys.filter(function (k) {
+        return String(k).toLowerCase().replace(/[\s_]/g, '') === String(h).toLowerCase().replace(/[\s_]/g, '');
+      })[0];
+      return key ? p[key] : '';
+    });
+    sh.appendRow(row);
+    return jsonOut_({ ok: true, id: id, mode: 'add', row: sh.getLastRow() });
+  }
 }
 
-function updateInstrument(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
-    if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
-
-    const rows    = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idColIdx = findInstCol(headers, 'id');
-    if (idColIdx < 0) return { ok:false, msg:'Cannot find id column in Instruments sheet' };
-
-    for (let i = 1; i < rows.length; i++) {
-      if (String(rows[i][idColIdx]).trim() !== String(data.id).trim()) continue;
-
-      // Update only columns that have a matching field in data
-      rows[0].forEach((h, colIdx) => {
-        const hNorm = String(h).toLowerCase().trim();
-        for (const [field, aliases] of Object.entries(INST_HEADER_ALIASES)) {
-          const match = aliases.some(a => a.replace(/[\s\/\-_]/g,'').toLowerCase() === hNorm.replace(/[\s\/\-_]/g,'').toLowerCase());
-          if (match && data[field] !== undefined) {
-            sheet.getRange(i+1, colIdx+1).setValue(data[field]);
-            break;
-          }
-        }
-      });
-      return { ok:true, msg:'updateInstrument success' };
+// Delete a row by id from any sheet.
+function deleteRow_(e, sheetName) {
+  var id = String(e.parameter.id || '').trim();
+  if (!id) return jsonOut_({ ok: false, error: 'missing id' });
+  var sh = getSheet_(e, sheetName);
+  var headers = getHeaders_(sh);
+  var idCol = headerIndex_(headers, 'id');
+  if (idCol < 0) return jsonOut_({ ok: false, error: 'no id column' });
+  var lastRow = sh.getLastRow();
+  for (var r = 2; r <= lastRow; r++) {
+    var cell = String(sh.getRange(r, idCol + 1).getValue()).trim();
+    if (cell.toLowerCase() === id.toLowerCase()) {
+      sh.deleteRow(r);
+      return jsonOut_({ ok: true, id: id, deleted: true });
     }
-    return { ok:false, msg:'Instrument not found: ' + data.id };
-  } catch(e) { return { ok:false, msg:e.toString() }; }
+  }
+  return jsonOut_({ ok: false, error: 'not found', id: id });
 }
 
-function deleteInstrument(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName(data.instSheet || 'Instruments');
-    if (!sheet) return { ok:false, msg:'Instruments sheet not found' };
-    const rows = sheet.getDataRange().getValues();
-    const headers = rows[0].map(h => String(h).toLowerCase().trim());
-    const idIdx = headers.indexOf('id');
-    for (let i = rows.length - 1; i >= 1; i--) {
-      if (String(rows[i][idIdx]).trim() === String(data.id).trim()) {
-        sheet.deleteRow(i + 1);
-        return { ok:true, msg:'deleteInstrument success' };
-      }
+/* Delta-based stock update (used when an Internal Test passes).
+   Increments qty for an existing id, or creates the row if missing. */
+function updateStockDelta_(e) {
+  var p = e.parameter;
+  var id = String(p.id || '').trim();
+  if (!id) return jsonOut_({ ok: false, error: 'missing id' });
+  var delta = parseInt(p.delta, 10) || 0;
+
+  var sh = getSheet_(e, p.stockSheet || 'Stock',
+                     ['id','name','category','partNo','brand','qty','minQty','unit','location','status']);
+  var headers = getHeaders_(sh);
+  var idCol = headerIndex_(headers, 'id');
+  var qtyCol = headerIndex_(headers, 'qty');
+  var lastRow = sh.getLastRow();
+
+  for (var r = 2; r <= lastRow; r++) {
+    if (String(sh.getRange(r, idCol + 1).getValue()).trim().toLowerCase() === id.toLowerCase()) {
+      var cur = parseInt(sh.getRange(r, qtyCol + 1).getValue(), 10) || 0;
+      sh.getRange(r, qtyCol + 1).setValue(cur + delta);
+      return jsonOut_({ ok: true, id: id, qty: cur + delta, mode: 'increment' });
     }
-    return { ok:false, msg:'Instrument not found: ' + data.id };
-  } catch(e) { return { ok:false, msg:e.toString() }; }
+  }
+  // Not found → create
+  var row = headers.map(function (h) {
+    var key = h.toLowerCase();
+    if (key === 'id') return id;
+    if (key === 'name') return p.name || '';
+    if (key === 'category') return p.category || '';
+    if (key === 'brand') return p.brand || '';
+    if (key === 'unit') return p.unit || '';
+    if (key === 'qty') return delta;
+    if (key === 'minqty') return 1;
+    if (key === 'status') return 'ok';
+    return '';
+  });
+  sh.appendRow(row);
+  return jsonOut_({ ok: true, id: id, qty: delta, mode: 'create' });
 }
 
-// ──────────── TEST HISTORY ────────────
-function addTestHistory(data) {
-  try {
-    const ss    = getSpreadsheet(data);
-    const sheet = ss.getSheetByName('TestHistory') || ss.insertSheet('TestHistory');
-    const COLS  = ['testId','date','module','serialNumbers','tester','passCount','failCount','total','overall'];
-    ensureHeader(sheet, COLS);
-    sheet.appendRow(COLS.map(c => data[c] || ''));
-    return { ok:true, msg:'addTestHistory success' };
-  } catch(e) { return { ok:false, msg:e.toString() }; }
+/* Mark a borrow record as returned. Sets status + returnDate (+ note/timestamps if columns exist). */
+function updateReturn_(e) {
+  var p = e.parameter;
+  var id = String(p.id || '').trim();
+  if (!id) return jsonOut_({ ok: false, error: 'missing id' });
+
+  var sh = getSheet_(e, p.borrowSheet || 'BorrowReturn');
+  var headers = getHeaders_(sh);
+  var idCol = headerIndex_(headers, 'id');
+  var lastRow = sh.getLastRow();
+
+  for (var r = 2; r <= lastRow; r++) {
+    if (String(sh.getRange(r, idCol + 1).getValue()).trim().toLowerCase() === id.toLowerCase()) {
+      setIfHeader_(sh, headers, r, 'status', 'returned');
+      setIfHeader_(sh, headers, r, 'returnDate', p.returnDate || '');
+      setIfHeader_(sh, headers, r, 'returnNote', p.note || '');
+      return jsonOut_({ ok: true, id: id, mode: 'return' });
+    }
+  }
+  return jsonOut_({ ok: false, error: 'borrow id not found', id: id });
+}
+
+function setIfHeader_(sh, headers, row, headerName, value) {
+  var ci = headerIndex_(headers, headerName);
+  if (ci >= 0) sh.getRange(row, ci + 1).setValue(value);
+}
+
+/* Append a test-history record. */
+function addTestHistory_(e) {
+  var p = e.parameter;
+  var sh = getSheet_(e, p.testSheet || 'TestHistory',
+    ['testId','date','module','serialNumbers','tester','passCount','failCount','total','overall','timestamp']);
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['testId','date','module','serialNumbers','tester','passCount','failCount','total','overall','timestamp']);
+  }
+  var headers = getHeaders_(sh);
+  var map = {
+    testid: p.testId || '',
+    date: p.date || '',
+    module: p.module || '',
+    serialnumbers: p.serialNumbers || '',
+    tester: p.tester || '',
+    passcount: p.passCount || '',
+    failcount: p.failCount || '',
+    total: p.total || '',
+    overall: p.overall || '',
+    timestamp: p.timestamp || ''
+  };
+  var row = headers.map(function (h) {
+    return map[String(h).toLowerCase().replace(/[\s_]/g, '')] || '';
+  });
+  sh.appendRow(row);
+  return jsonOut_({ ok: true, testId: p.testId, mode: 'add' });
+}
+
+/* Control keys are NOT written as data columns. */
+function isDataKey_(k) {
+  var control = ['action','sheetId','stockSheet','borrowSheet','instSheet',
+                 'materialsSheet','testSheet','delta','note'];
+  return control.indexOf(k) < 0;
+}
+
+function jsonOut_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
