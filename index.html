@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.9.2</title>
+<title>MPS Stock Management System v1.10.0</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -907,7 +907,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.9.2</div>
+    <div class="login-footer">MPS Department · v1.10.0</div>
   </div>
 </div>
 
@@ -955,7 +955,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.9.2</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.10.0</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1439,6 +1439,10 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
           <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
           เครื่องมือวัด
         </button>
+        <button class="dm-subtab" data-sub="materials" onclick="switchDMSub('materials',this)">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 7v10l8 4 8-4V7l-8-4-8 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 7l8 4 8-4M12 11v10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          Material Master
+        </button>
       </div>
 
       <!-- Stock CRUD -->
@@ -1480,9 +1484,61 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
           </table>
         </div>
       </div>
+      <!-- Material Master CRUD -->
+      <div id="dm-materials" class="dm-section" style="display:none">
+        <div class="dm-toolbar">
+          <div>
+            <span class="table-title">Material Master (ทะเบียนวัสดุกลาง)</span>
+            <div style="font-size:0.74rem;color:var(--text3);margin-top:3px">รหัส → คำอธิบายมาตรฐาน · แหล่งข้อมูลกลางของระบบ (sheet: Materials)</div>
+          </div>
+          <button class="dm-add-btn" onclick="openMaterialModal('add',null)">
+            <svg viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            เพิ่มวัสดุใหม่
+          </button>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>รหัส</th><th>คำอธิบาย (Description)</th><th>หมวดหมู่</th><th>Part No.</th>
+              <th>ยี่ห้อ</th><th>หน่วย</th><th>ที่เก็บ</th><th>จัดการ</th>
+            </tr></thead>
+            <tbody id="dm-mat-tbody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <!-- Data Manage Modal -->
+    <!-- Material Master Modal -->
+    <div id="matModal" class="modal-overlay" style="display:none">
+      <div class="modal-box" style="width:580px;max-width:95vw;max-height:90vh;overflow-y:auto">
+        <h3 id="matModalTitle">เพิ่มวัสดุ</h3>
+        <p class="modal-desc">ข้อมูลจะถูกบันทึกลง Google Sheets sheet Materials — เป็นทะเบียนกลางของระบบ</p>
+        <div class="dm-form-grid">
+          <div class="form-group"><label>รหัสวัสดุ * (Material Code)</label>
+            <input type="text" id="mat_id" placeholder="FC-004"></div>
+          <div class="form-group"><label>คำอธิบาย * (Description)</label>
+            <input type="text" id="mat_name" placeholder="ชื่อ/คำอธิบายมาตรฐาน"></div>
+          <div class="form-group"><label>หมวดหมู่</label>
+            <select id="mat_cat">
+              <option value="fc">Flow Computer</option>
+              <option value="gc">Gas Chromatograph</option>
+              <option value="acc">Accessories</option>
+            </select></div>
+          <div class="form-group"><label>Part No.</label>
+            <input type="text" id="mat_partNo" placeholder="Part Number"></div>
+          <div class="form-group"><label>ยี่ห้อ (Brand)</label>
+            <input type="text" id="mat_brand" placeholder="Brand"></div>
+          <div class="form-group"><label>หน่วย (Unit)</label>
+            <input type="text" id="mat_unit" placeholder="EA. / ชุด / pcs."></div>
+          <div class="form-group"><label>ที่เก็บมาตรฐาน (Default Location)</label>
+            <input type="text" id="mat_location" placeholder="FL.2"></div>
+        </div>
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn-submit" onclick="saveMaterialModal()">บันทึก</button>
+          <button class="btn-cancel" onclick="closeMaterialModal()">ยกเลิก</button>
+        </div>
+      </div>
+    </div>
     <div id="dmModal" class="modal-overlay" style="display:none">
       <div class="modal-box" style="width:580px;max-width:95vw;max-height:90vh;overflow-y:auto">
         <h3 id="dmModalTitle">เพิ่มสินค้า</h3>
@@ -1579,7 +1635,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.9.2 — app.js
+   MPS Stock Management System v1.10.0 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1587,11 +1643,12 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 // ──────────── CONFIG ────────────
 // ─── Hardcoded defaults (fallback ถ้าไม่มีค่าใน localStorage) ───
 const HARDCODED_CONFIG = {
-  sheetId:     '1c5tiZzbtOpp_5PuRKpw4PbKcmHei_LWg9YZP3XhxcaE',
-  stockSheet:  'Stock',
-  borrowSheet: 'BorrowReturn',
-  instSheet:   'Instruments',
-  gasUrl:      'https://script.google.com/macros/s/AKfycbxqLKfkiC_tkJwt4cgXQ8F4wuvoz5H0S_AeRh7GbkMIrAYhSBlgFQUjZh7gFi_jQ4sy/exec'
+  sheetId:        '1c5tiZzbtOpp_5PuRKpw4PbKcmHei_LWg9YZP3XhxcaE',
+  stockSheet:     'Stock',
+  borrowSheet:    'BorrowReturn',
+  instSheet:      'Instruments',
+  materialsSheet: 'Materials',
+  gasUrl:         'https://script.google.com/macros/s/AKfycbxqLKfkiC_tkJwt4cgXQ8F4wuvoz5H0S_AeRh7GbkMIrAYhSBlgFQUjZh7gFi_jQ4sy/exec'
 };
 
 // Admin สามารถ override ผ่าน Settings UI → เก็บใน localStorage
@@ -1822,17 +1879,24 @@ async function loadAllData() {
   let usingDemo = false;
 
   if (!cfg.sheetId) {
+    buildMaterialMaster([]);  // seed-only master
     allStock       = getDemoStock();
     allBorrow      = getDemoBorrow();
     allInstruments = getDemoInstruments();
     usingDemo = true;
   } else {
     try {
-      const [stock, borrow, inst] = await Promise.all([
+      const [materials, stock, borrow, inst] = await Promise.all([
+        gSheetCSV(cfg.materialsSheet),
         gSheetCSV(cfg.stockSheet),
         gSheetCSV(cfg.borrowSheet),
         gSheetCSV(cfg.instSheet)
       ]);
+      // Materials Master — build registry from sheet (falls back to seed for missing codes)
+      const matOk = materials.length > 0 && materials[0] &&
+                    !JSON.stringify(materials[0]).includes('Copyright') &&
+                    !JSON.stringify(materials[0]).includes('function ');
+      buildMaterialMaster(matOk ? materials : []);
       // Stock — normalized against Material Master (dedupe + canonical names)
       if (stock.length) {
         allStock = normalizeStock(stock);
@@ -3361,7 +3425,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.9.2
+   AUTH / LOGIN SYSTEM  v1.10.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3532,7 +3596,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.9.2
+   INTERNAL TEST MODULE  v1.10.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3594,23 +3658,55 @@ const IT_MODULES = {
   }
 };
 
-// ── Map module to stock item for "add to stock"
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.9.2
+   MATERIAL MASTER DATA  v1.10.0
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
+
+   Source priority:  Materials sheet (Google Sheets)  →  fallback to MATERIAL_SEED
+   Staff maintain the catalog in the "Materials" sheet; this hardcoded
+   seed guarantees the system works offline / before the sheet exists.
    ═══════════════════════════════════════════════ */
-const MATERIAL_MASTER = {
+const MATERIAL_SEED = {
   // ── Flow Computer
-  'FC-001':  { name:'CPU Module FloBoss S600+',                 category:'fc',  partNo:'1550',         brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
-  'FC-002':  { name:'I/O Module FloBoss S600+',                 category:'fc',  partNo:'1441',         brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
-  'FC-003':  { name:'HART Module FloBoss S600+',                category:'fc',  partNo:'1880',         brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
-  'FC-FULL': { name:'Flow Computer FloBoss S600+ (Complete)',   category:'fc',  partNo:'—',            brand:'Emerson',       unit:'ชุด',  location:'Store' },
-  'FC-BP':   { name:'Backplane FloBoss S600+',                  category:'fc',  partNo:'—',            brand:'Emerson',       unit:'EA.',  location:'Store' },
-  'FC-FP':   { name:'Front Panel FloBoss S600+',                category:'fc',  partNo:'—',            brand:'Emerson',       unit:'EA.',  location:'Store' },
+  'FC-001':  { name:'CPU Module FloBoss S600+',                 category:'fc',  partNo:'1550',          brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
+  'FC-002':  { name:'I/O Module FloBoss S600+',                 category:'fc',  partNo:'1441',          brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
+  'FC-003':  { name:'HART Module FloBoss S600+',                category:'fc',  partNo:'1880',          brand:'Emerson S600+', unit:'EA.',  location:'FL.2' },
+  'FC-FULL': { name:'Flow Computer FloBoss S600+ (Complete)',   category:'fc',  partNo:'—',             brand:'Emerson',       unit:'ชุด',  location:'Store' },
+  'FC-BP':   { name:'Backplane FloBoss S600+',                  category:'fc',  partNo:'—',             brand:'Emerson',       unit:'EA.',  location:'Store' },
+  'FC-FP':   { name:'Front Panel FloBoss S600+',                category:'fc',  partNo:'—',             brand:'Emerson',       unit:'EA.',  location:'Store' },
   // ── Accessories
-  'AC-001':  { name:'Interconnect Board',                       category:'acc', partNo:'RS SD37B LP3R', brand:'Weidmuller',   unit:'pcs.', location:'FL.2' },
+  'AC-001':  { name:'Interconnect Board',                       category:'acc', partNo:'RS SD37B LP3R', brand:'Weidmuller',    unit:'pcs.', location:'FL.2' },
 };
+
+// Live, mutable registry — seeded from MATERIAL_SEED, overwritten by Materials sheet on load
+let MATERIAL_MASTER = JSON.parse(JSON.stringify(MATERIAL_SEED));
+let allMaterials = [];   // array form for the management UI
+
+// Build MATERIAL_MASTER (and allMaterials) from Materials sheet rows; fall back to seed
+function buildMaterialMaster(rows) {
+  const master = {};
+  if (rows && rows.length) {
+    rows.forEach(r => {
+      const id = (r.id||'').trim().toUpperCase();
+      if (!id) return;
+      master[id] = {
+        name:     r.name     || '',
+        category: r.category || 'fc',
+        partNo:   r.partNo    || '—',
+        brand:    r.brand    || '',
+        unit:     r.unit     || 'EA.',
+        location: r.location || '—',
+      };
+    });
+  }
+  // Merge: seed provides any codes missing from the sheet (so system never regresses)
+  Object.keys(MATERIAL_SEED).forEach(id => { if (!master[id]) master[id] = { ...MATERIAL_SEED[id] }; });
+  MATERIAL_MASTER = master;
+  allMaterials = Object.keys(master).map(id => ({ id, ...master[id] }))
+    .sort((a,b) => a.id.localeCompare(b.id));
+  return master;
+}
 
 // Look up canonical material data; returns null if code not in master
 function getMaterial(id) {
@@ -3637,7 +3733,7 @@ function normalizeStock(rows) {
       if (!norm.location || norm.location === '—') norm.location = master.location;
     }
     if (byId.has(id)) {
-      // Duplicate ID → merge: sum qty, keep max minQty, keep earliest createdAt
+      // Duplicate ID → merge: sum qty, keep max minQty
       const ex = byId.get(id);
       ex.qty    = String((parseInt(ex.qty)||0) + (parseInt(norm.qty)||0));
       ex.minQty = String(Math.max(parseInt(ex.minQty)||0, parseInt(norm.minQty)||0));
@@ -3649,14 +3745,45 @@ function normalizeStock(rows) {
   return Array.from(byId.values());
 }
 
-const MODULE_TO_STOCK = {
-  fc_full:    { id:'FC-FULL', ...MATERIAL_MASTER['FC-FULL'] },
-  backplane:  { id:'FC-BP',   ...MATERIAL_MASTER['FC-BP'] },
-  cpu:        { id:'FC-001',  ...MATERIAL_MASTER['FC-001'] },
-  frontpanel: { id:'FC-FP',   ...MATERIAL_MASTER['FC-FP'] },
-  hart:       { id:'FC-003',  ...MATERIAL_MASTER['FC-003'] },
-  io:         { id:'FC-002',  ...MATERIAL_MASTER['FC-002'] },
+// Register / update a material in the live master + persist to Materials sheet via GAS
+function registerMaterial(mat) {
+  const id = (mat.id||'').trim().toUpperCase();
+  if (!id) return;
+  const isNew = !MATERIAL_MASTER[id];
+  MATERIAL_MASTER[id] = {
+    name:     mat.name || '',
+    category: mat.category || 'fc',
+    partNo:   mat.partNo || '—',
+    brand:    mat.brand || '',
+    unit:     mat.unit || 'EA.',
+    location: mat.location || '—',
+  };
+  // refresh array form
+  allMaterials = Object.keys(MATERIAL_MASTER).map(k => ({ id:k, ...MATERIAL_MASTER[k] }))
+    .sort((a,b) => a.id.localeCompare(b.id));
+  // persist to Materials sheet
+  if (cfg.gasUrl && cfg.sheetId) {
+    gasWrite(isNew ? 'addMaterial' : 'updateMaterial', {
+      materialsSheet: cfg.materialsSheet || 'Materials',
+      id, name: MATERIAL_MASTER[id].name, category: MATERIAL_MASTER[id].category,
+      partNo: MATERIAL_MASTER[id].partNo, brand: MATERIAL_MASTER[id].brand,
+      unit: MATERIAL_MASTER[id].unit, location: MATERIAL_MASTER[id].location,
+    });
+  }
+  return isNew;
+}
+
+// MODULE_TO_STOCK resolves dynamically against the live master via getMaterial()
+const MODULE_TO_ID = {
+  fc_full:'FC-FULL', backplane:'FC-BP', cpu:'FC-001',
+  frontpanel:'FC-FP', hart:'FC-003', io:'FC-002',
 };
+function moduleStockDef(mod) {
+  const id = MODULE_TO_ID[mod];
+  if (!id) return null;
+  const m = getMaterial(id) || MATERIAL_SEED[id] || {};
+  return { id, name:m.name, category:m.category, brand:m.brand, unit:m.unit };
+}
 
 let itCurrentMod  = '';   // ว่างจนกว่าจะเลือก
 let itCurrentGroup = 'fc';
@@ -3930,7 +4057,7 @@ function saveToStockFromTest() {
 
   // Add to stock if pass
   if (overallPass) {
-    const stockDef = MODULE_TO_STOCK[itCurrentMod];
+    const stockDef = moduleStockDef(itCurrentMod);
     const existing = allStock.find(i => i.id === stockDef.id);
     if (existing) {
       existing.qty = String(parseInt(existing.qty||0) + 1);
@@ -4253,7 +4380,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.9.2
+   DATA MANAGEMENT MODULE  v1.10.0
    CRUD for Stock + Instruments → writes to Google Sheets
    Access: Admin only
    ============================================================ */
@@ -4268,14 +4395,16 @@ function switchDMSub(sub, btn) {
   dmCurrentSub = sub;
   document.querySelectorAll('.dm-subtab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('dm-stock').style.display      = sub === 'stock'       ? '' : 'none';
+  document.getElementById('dm-stock').style.display       = sub === 'stock'       ? '' : 'none';
   document.getElementById('dm-instruments').style.display = sub === 'instruments' ? '' : 'none';
+  document.getElementById('dm-materials').style.display   = sub === 'materials'   ? '' : 'none';
   renderDMTable(sub);
 }
 
 function initDataManage() {
   renderDMTable('stock');
   renderDMTable('instruments');
+  renderDMTable('materials');
 }
 
 // ── Render table rows
@@ -4334,6 +4463,30 @@ function renderDMTable(type) {
         </td>
       </tr>`;
     }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ไม่มีข้อมูล</td></tr>';
+  } else if (type === 'materials') {
+    const tbody = document.getElementById('dm-mat-tbody');
+    if (!tbody) return;
+    const catLabel = { fc:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
+    tbody.innerHTML = allMaterials.map((m, idx) => {
+      const inSeed = !!MATERIAL_SEED[m.id];
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:0.82rem;color:var(--accent2);font-weight:600">${escapeHtml(m.id)}</td>
+        <td style="font-weight:500">${escapeHtml(m.name)}</td>
+        <td><span style="font-size:0.78rem">${escapeHtml(catLabel[m.category]||m.category)}</span></td>
+        <td style="font-family:var(--mono);font-size:0.8rem">${escapeHtml(m.partNo||'—')}</td>
+        <td style="font-size:0.82rem">${escapeHtml(m.brand||'—')}</td>
+        <td style="font-size:0.82rem">${escapeHtml(m.unit||'—')}</td>
+        <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${escapeHtml(m.location||'—')}</td>
+        <td style="white-space:nowrap">
+          <button class="dm-edit-btn" onclick="openMaterialModal('edit',${idx})" title="แก้ไข">
+            <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="dm-del-btn" onclick="deleteMaterial(${idx})" title="${inSeed?'ลบไม่ได้ (วัสดุระบบ)':'ลบ'}" ${inSeed?'style="opacity:0.3;cursor:not-allowed" disabled':''}>
+            <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีวัสดุในทะเบียน</td></tr>';
   }
 }
 
@@ -4342,6 +4495,45 @@ function renderDMTable(type) {
 function _dv(field) {
   const d = dmModalData || {};
   return escapeHtml(d[field] || '');
+}
+
+// ── Material Master autofill: when a known code is entered, fill + lock descriptive fields
+function onMaterialCodeInput() {
+  const idEl = document.getElementById('dm_id');
+  const hint = document.getElementById('dm_mat_hint');
+  if (!idEl) return;
+  const code = idEl.value.trim().toUpperCase();
+  const master = getMaterial(code);
+  const descFields = ['dm_name','dm_partNo','dm_brand','dm_unit'];
+  const setLocked = (locked) => {
+    descFields.forEach(fid => {
+      const el = document.getElementById(fid);
+      if (!el) return;
+      el.readOnly = locked;
+      el.style.opacity = locked ? '0.7' : '1';
+      el.style.cursor = locked ? 'not-allowed' : 'text';
+    });
+    const cat = document.getElementById('dm_cat');
+    if (cat) { cat.disabled = locked; cat.style.opacity = locked ? '0.7' : '1'; }
+  };
+  if (master) {
+    document.getElementById('dm_name').value   = master.name;
+    document.getElementById('dm_partNo').value = master.partNo;
+    document.getElementById('dm_brand').value  = master.brand;
+    document.getElementById('dm_unit').value   = master.unit;
+    const cat = document.getElementById('dm_cat'); if (cat) cat.value = master.category;
+    const loc = document.getElementById('dm_location');
+    if (loc && !loc.value) loc.value = master.location;
+    setLocked(true);
+    if (hint) hint.innerHTML = `<span style="color:var(--success)">✓ พบใน Material Master — กรอกข้อมูลอัตโนมัติ</span>`;
+  } else {
+    setLocked(false);
+    if (hint) {
+      hint.innerHTML = code
+        ? `<span style="color:var(--accent2)">✦ รหัสใหม่ — จะเพิ่มเข้า Material Master เมื่อบันทึก</span>`
+        : '';
+    }
+  }
 }
 
 function openDMModal(type, mode, idx) {
@@ -4359,10 +4551,13 @@ function openDMModal(type, mode, idx) {
       : `<svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> แก้ไขสินค้า`;
     descEl.textContent  = 'ข้อมูลจะถูกบันทึกลง Google Sheets sheet Stock';
     const d = dmModalData || {};
+    const matOptions = allMaterials.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.name)}</option>`).join('');
     bodyEl.innerHTML = `
+      <datalist id="dm_material_codes">${matOptions}</datalist>
       <div class="dm-form-grid">
         <div class="form-group"><label>รหัสสินค้า *</label>
-          <input type="text" id="dm_id" value="${escapeHtml(d.id||'')}" placeholder="FC-001" ${mode==='edit'?'readonly style="opacity:0.6"':''}></div>
+          <input type="text" id="dm_id" value="${escapeHtml(d.id||'')}" list="dm_material_codes" autocomplete="off" placeholder="FC-001" oninput="onMaterialCodeInput()" ${mode==='edit'?'readonly style="opacity:0.6"':''}>
+          <div id="dm_mat_hint" style="font-size:0.72rem;margin-top:4px;min-height:14px;color:var(--text3)"></div></div>
         <div class="form-group"><label>ชื่อสินค้า *</label>
           <input type="text" id="dm_name" value="${escapeHtml(d.name||'')}" placeholder="ชื่อสินค้า"></div>
         <div class="form-group"><label>หมวดหมู่</label>
@@ -4390,6 +4585,7 @@ function openDMModal(type, mode, idx) {
             <option value="out" ${d.status==='out'?'selected':''}>Out</option>
           </select></div>
       </div>`;
+    if (mode === 'add') setTimeout(onMaterialCodeInput, 0);
   } else {
     titleEl.innerHTML = mode === 'add'
       ? `<svg viewBox="0 0 24 24" fill="none" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> เพิ่มเครื่องมือใหม่`
@@ -4440,6 +4636,76 @@ function closeDMModal() {
   document.getElementById('dmModal').style.display = 'none';
 }
 
+// ══════════ MATERIAL MASTER CRUD ══════════
+let matModalMode = 'add';
+let matModalId   = null;
+
+function openMaterialModal(mode, idx) {
+  if (!requireRole('admin')) return;
+  matModalMode = mode;
+  const m = (mode === 'edit' && idx !== null) ? allMaterials[idx] : null;
+  matModalId = m ? m.id : null;
+  document.getElementById('matModalTitle').textContent = mode === 'add' ? '+ เพิ่มวัสดุใหม่' : '✎ แก้ไขวัสดุ';
+  document.getElementById('mat_id').value       = m ? m.id : '';
+  document.getElementById('mat_id').readOnly    = mode === 'edit';
+  document.getElementById('mat_id').style.opacity = mode === 'edit' ? '0.6' : '1';
+  document.getElementById('mat_name').value     = m ? m.name : '';
+  document.getElementById('mat_cat').value      = m ? m.category : 'fc';
+  document.getElementById('mat_partNo').value   = m ? (m.partNo||'') : '';
+  document.getElementById('mat_brand').value    = m ? (m.brand||'') : '';
+  document.getElementById('mat_unit').value     = m ? (m.unit||'') : '';
+  document.getElementById('mat_location').value = m ? (m.location||'') : '';
+  document.getElementById('matModal').style.display = 'flex';
+}
+
+function closeMaterialModal() {
+  document.getElementById('matModal').style.display = 'none';
+}
+
+function saveMaterialModal() {
+  if (!requireRole('admin')) return;
+  const id   = document.getElementById('mat_id').value.trim().toUpperCase();
+  const name = document.getElementById('mat_name').value.trim();
+  if (!id || !name) { showToast('กรุณากรอก รหัส และ คำอธิบาย', 'warn'); return; }
+  if (matModalMode === 'add' && getMaterial(id)) {
+    showToast(`รหัส ${id} มีอยู่แล้วในทะเบียน`, 'error'); return;
+  }
+  const isNew = registerMaterial({
+    id, name,
+    category: document.getElementById('mat_cat').value,
+    partNo:   document.getElementById('mat_partNo').value.trim() || '—',
+    brand:    document.getElementById('mat_brand').value.trim(),
+    unit:     document.getElementById('mat_unit').value.trim() || 'EA.',
+    location: document.getElementById('mat_location').value.trim() || '—',
+  });
+  // Re-apply master to existing stock rows so descriptions stay in sync
+  allStock = normalizeStock(allStock);
+  renderDMTable('materials');
+  renderDMTable('stock');
+  renderWarehouse();
+  closeMaterialModal();
+  showToast(isNew ? `✅ เพิ่มวัสดุ ${id} เข้าทะเบียนแล้ว` : `✅ อัปเดตวัสดุ ${id} แล้ว`, 'success');
+}
+
+function deleteMaterial(idx) {
+  if (!requireRole('admin')) return;
+  const m = allMaterials[idx];
+  if (!m) return;
+  if (MATERIAL_SEED[m.id]) { showToast('ไม่สามารถลบวัสดุพื้นฐานของระบบได้', 'warn'); return; }
+  // Guard: block delete if stock rows still reference this material
+  const inUse = allStock.some(s => (s.id||'').toUpperCase() === m.id);
+  if (inUse && !confirm(`วัสดุ ${m.id} ยังมีในสต็อก — ลบออกจากทะเบียนใช่หรือไม่? (รายการสต็อกจะไม่ถูกลบ)`)) return;
+  if (!inUse && !confirm(`ลบวัสดุ ${m.id} (${m.name}) ออกจากทะเบียนใช่หรือไม่?`)) return;
+  delete MATERIAL_MASTER[m.id];
+  allMaterials = Object.keys(MATERIAL_MASTER).map(k => ({ id:k, ...MATERIAL_MASTER[k] }))
+    .sort((a,b) => a.id.localeCompare(b.id));
+  if (cfg.gasUrl && cfg.sheetId) {
+    gasWrite('deleteMaterial', { materialsSheet: cfg.materialsSheet || 'Materials', id: m.id });
+  }
+  renderDMTable('materials');
+  showToast(`🗑️ ลบวัสดุ ${m.id} แล้ว`, 'success');
+}
+
 // ── Save from modal
 async function saveDMModal() {
   if (!requireRole('admin')) return;
@@ -4472,6 +4738,13 @@ async function saveDMModal() {
       record.brand    = master.brand;
       record.unit     = master.unit;
       showToast(`ℹ️ รหัส ${id} อยู่ใน Material Master — ใช้ชื่อมาตรฐาน "${master.name}"`, 'info');
+    } else if (!master && mode === 'add') {
+      // New code → register it in the Material Master (catalog grows naturally)
+      registerMaterial({
+        id, name: record.name, category: record.category,
+        partNo: record.partNo, brand: record.brand, unit: record.unit,
+        location: record.location || '—',
+      });
     }
 
     if (mode === 'add') {
