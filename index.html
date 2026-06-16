@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.13.3</title>
+<title>MPS Stock Management System v1.14.0</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -932,7 +932,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.13.3</div>
+    <div class="login-footer">MPS Department · v1.14.0</div>
   </div>
 </div>
 
@@ -984,7 +984,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.3</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.14.0</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1189,12 +1189,18 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
         <div class="borrow-list-card">
           <div class="table-header">
             <span class="table-title">รายการยืม-คืน</span>
-            <select id="borrowFilter" onchange="filterBorrowList()">
-              <option value="all">ทั้งหมด</option>
-              <option value="borrowed">ยืมอยู่</option>
-              <option value="returned">คืนแล้ว</option>
-              <option value="overdue">เกินกำหนด</option>
-            </select>
+            <div class="table-actions">
+              <select id="borrowFilter" onchange="filterBorrowList()">
+                <option value="all">ทั้งหมด</option>
+                <option value="borrowed">ยืมอยู่</option>
+                <option value="returned">คืนแล้ว</option>
+                <option value="overdue">เกินกำหนด</option>
+              </select>
+              <button class="btn-export" onclick="exportBorrowPDF()">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+                Export PDF
+              </button>
+            </div>
           </div>
           <div class="table-wrapper">
             <table>
@@ -1255,7 +1261,6 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
               <textarea id="soNote" rows="3" placeholder="รายละเอียดเพิ่มเติม" style="resize:vertical"></textarea>
             </div>
             <button class="btn-submit" style="width:100%;margin-top:4px" onclick="submitStockOut()">
-              <svg viewBox="0 0 24 24" fill="none" style="width:15px;height:15px;vertical-align:-2px;margin-right:6px"><path d="M20 12V22H4V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 7H2v5h20V7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               ยืนยันการเบิกออก
             </button>
           </div>
@@ -1270,6 +1275,10 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
                 <option value="OUT">เบิกออก (OUT)</option>
                 <option value="IN">รับเข้า (IN)</option>
               </select>
+              <button class="btn-export" onclick="exportLedgerPDF()">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2"/></svg>
+                Export PDF
+              </button>
             </div>
           </div>
           <div class="table-wrapper">
@@ -1586,14 +1595,13 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
         <div class="dm-toolbar">
           <div>
             <span class="table-title">Material Master (ทะเบียนวัสดุกลาง)</span>
-            <div class="dm-readonly-note">🔒 อ่านอย่างเดียว · แหล่งข้อมูลกลางของระบบ — แก้ไข/เพิ่ม/ลบ ได้ที่ Google Sheets (sheet: Materials) เท่านั้น</div>
           </div>
         </div>
         <div class="table-wrapper">
           <table>
             <thead><tr>
               <th>รหัส</th><th>คำอธิบาย (Description)</th><th>หมวดหมู่</th><th>Part No.</th>
-              <th>ยี่ห้อ</th><th>หน่วย</th><th>ที่เก็บ</th>
+              <th>ยี่ห้อ</th><th>หน่วย</th>
             </tr></thead>
             <tbody id="dm-mat-tbody"></tbody>
           </table>
@@ -1698,7 +1706,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.13.3 — app.js
+   MPS Stock Management System v1.14.0 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1776,7 +1784,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.13.3
+   STOCK LEDGER ENGINE  v1.14.0
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -2297,7 +2305,7 @@ function renderStockTable(items) {
     const stTh = st === 'ok' ? 'พร้อมใช้' : st === 'low' ? 'ต่ำกว่าเกณฑ์' : 'หมด';
     const catClass = `cat-${item.category}`;
     return `<tr>
-      <td><span style="font-family:var(--mono);font-size:0.82rem;color:var(--text3)">${escapeHtml(item.id)}</span></td>
+      <td><span style="font-family:var(--mono);font-size:0.82rem;color:var(--accent2);font-weight:600">${escapeHtml(item.id)}</span></td>
       <td style="color:var(--text);font-weight:500">${escapeHtml(item.name)}</td>
       <td><span class="cat-dot ${escapeHtml(catClass)}">${escapeHtml(catLabel[item.category]||item.category)}</span></td>
       <td><span style="font-family:var(--mono);font-size:0.8rem">${escapeHtml(item.partNo||'—')}</span></td>
@@ -3024,6 +3032,95 @@ function exportCSV() {
   showToast('Export CSV สำเร็จ', 'success');
 }
 
+// ── Export Borrow/Return PDF ──────────────────────────────────────────
+function exportBorrowPDF() {
+  showToast('กำลังเตรียม PDF...', 'info');
+  const now = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+  const filter = (document.getElementById('borrowFilter')||{}).value || 'all';
+  const filterLabel = {all:'ทั้งหมด',borrowed:'ยืมอยู่',returned:'คืนแล้ว',overdue:'เกินกำหนด'}[filter]||filter;
+  const filtered = allBorrowRecords.filter(b => {
+    if (filter === 'all') return true;
+    const st = getBorrowStatus(b);
+    return st === filter;
+  });
+  const stTh = { borrowed:'ยืมอยู่', returned:'คืนแล้ว', overdue:'เกินกำหนด' };
+  const stColor = { borrowed:'#0077cc', returned:'#16a34a', overdue:'#c0392b' };
+  const rows = filtered.map(b => {
+    const st = getBorrowStatus(b);
+    return '<tr>'
+      + '<td style="font-family:monospace;font-size:10px;color:#0077cc">' + escapeHtml(b.id) + '</td>'
+      + '<td>' + escapeHtml(b.borrower||'—') + '</td>'
+      + '<td>' + escapeHtml(b.itemName||'—') + '</td>'
+      + '<td style="text-align:center;font-family:monospace">' + (b.qty||1) + '</td>'
+      + '<td style="font-family:monospace;font-size:10px">' + escapeHtml(b.borrowDate||'—') + '</td>'
+      + '<td style="font-family:monospace;font-size:10px">' + escapeHtml(b.dueDate||'—') + '</td>'
+      + '<td style="text-align:center"><span style="padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;color:' + (stColor[st]||'#333') + '">' + (stTh[st]||st) + '</span></td>'
+      + '</tr>';
+  }).join('');
+  var html = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>รายการยืม-คืน MPS</title>'
+    + '<style>* {box-sizing:border-box;margin:0;padding:0} body {font-family:"Segoe UI",Arial,sans-serif;font-size:11px;color:#1e293b;padding:14mm 12mm}'
+    + '.header {display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;margin-bottom:14px;border-bottom:2.5px solid #1e3a5f}'
+    + '.title {font-size:15px;font-weight:700} .sub {font-size:9px;color:#64748b;margin-top:2px} .meta {text-align:right;font-size:9px;color:#64748b}'
+    + 'table {width:100%;border-collapse:collapse;font-size:10px} th {background:#1e3a5f;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.4px}'
+    + 'td {padding:5px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle} tr:nth-child(even) td {background:#fafafa}'
+    + '@media print {@page {margin:10mm} body {padding:0}}</style></head><body>'
+    + '<div class="header"><div><div class="title">MPS Stock Management — รายการยืม-คืน</div>'
+    + '<div class="sub">สถานะ: ' + escapeHtml(filterLabel) + ' · พิมพ์โดย: ' + escapeHtml(currentUser&&currentUser.name||'—') + '</div></div>'
+    + '<div class="meta">วันที่พิมพ์: ' + now + '<br>จำนวน: ' + filtered.length + ' รายการ</div></div>'
+    + '<table><thead><tr><th>รหัส</th><th>ผู้ยืม</th><th>สินค้า</th><th>จำนวน</th><th>วันยืม</th><th>กำหนดคืน</th><th>สถานะ</th></tr></thead>'
+    + '<tbody>' + (rows || '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">ไม่มีข้อมูล</td></tr>') + '</tbody></table>'
+    + '<script>window.onload=function(){window.print()}<\/script></body></html>';
+  var blob = new Blob([html], { type:'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var win = window.open(url, '_blank');
+  if (!win) { var a = document.createElement('a'); a.href = url; a.download = 'MPS_Borrow_' + new Date().toISOString().split('T')[0] + '.html'; a.click(); showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info'); }
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+}
+
+// ── Export Stock Ledger PDF ───────────────────────────────────────────
+function exportLedgerPDF() {
+  showToast('กำลังเตรียม PDF...', 'info');
+  var now = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+  var filter = (document.getElementById('soLedgerFilter')||{}).value || 'all';
+  var filterLabel = {all:'ทั้งหมด',OUT:'เบิกออก (OUT)',IN:'รับเข้า (IN)'}[filter]||filter;
+  var filtered = allTxns.filter(function(t) {
+    if (!t.itemId && !t.itemName) return false;
+    return filter === 'all' || t.type === filter;
+  });
+  var rows = filtered.map(function(t) {
+    var typeColor = t.type === 'OUT' ? '#c0392b' : t.type === 'IN' ? '#16a34a' : '#0077cc';
+    var sign = t.type === 'OUT' ? '−' : '+';
+    return '<tr>'
+      + '<td style="font-family:monospace;font-size:9px;white-space:nowrap">' + escapeHtml(t.timestamp||'') + '</td>'
+      + '<td style="font-weight:700;color:' + typeColor + '">' + escapeHtml(t.type||'') + '</td>'
+      + '<td style="font-family:monospace;font-size:10px;color:#0077cc">' + escapeHtml(t.itemId||'') + '</td>'
+      + '<td>' + escapeHtml(t.itemName||'') + '</td>'
+      + '<td style="font-family:monospace;font-weight:700;color:' + typeColor + ';text-align:center">' + sign + escapeHtml(String(t.qty||0)) + '</td>'
+      + '<td style="font-family:monospace;text-align:center">' + escapeHtml(t.balanceAfter||'—') + '</td>'
+      + '<td style="font-size:9px">' + escapeHtml(t.reason||'') + '</td>'
+      + '<td style="font-size:9px">' + escapeHtml(t.user||'—') + '</td>'
+      + '</tr>';
+  }).join('');
+  var html = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>Stock Ledger MPS</title>'
+    + '<style>* {box-sizing:border-box;margin:0;padding:0} body {font-family:"Segoe UI",Arial,sans-serif;font-size:11px;color:#1e293b;padding:14mm 12mm}'
+    + '.header {display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;margin-bottom:14px;border-bottom:2.5px solid #1e3a5f}'
+    + '.title {font-size:15px;font-weight:700} .sub {font-size:9px;color:#64748b;margin-top:2px} .meta {text-align:right;font-size:9px;color:#64748b}'
+    + 'table {width:100%;border-collapse:collapse;font-size:10px} th {background:#1e3a5f;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.4px}'
+    + 'td {padding:5px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle} tr:nth-child(even) td {background:#fafafa}'
+    + '@media print {@page {margin:10mm} body {padding:0}}</style></head><body>'
+    + '<div class="header"><div><div class="title">MPS Stock Management — Stock Ledger</div>'
+    + '<div class="sub">ตัวกรอง: ' + escapeHtml(filterLabel) + ' · พิมพ์โดย: ' + escapeHtml(currentUser&&currentUser.name||'—') + '</div></div>'
+    + '<div class="meta">วันที่พิมพ์: ' + now + '<br>จำนวน: ' + filtered.length + ' รายการ</div></div>'
+    + '<table><thead><tr><th>เวลา</th><th>ประเภท</th><th>รหัส</th><th>สินค้า</th><th>จำนวน</th><th>คงเหลือ</th><th>เหตุผล</th><th>โดย</th></tr></thead>'
+    + '<tbody>' + (rows || '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">ไม่มีข้อมูล</td></tr>') + '</tbody></table>'
+    + '<script>window.onload=function(){window.print()}<\/script></body></html>';
+  var blob = new Blob([html], { type:'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var win = window.open(url, '_blank');
+  if (!win) { var a = document.createElement('a'); a.href = url; a.download = 'MPS_Ledger_' + new Date().toISOString().split('T')[0] + '.html'; a.click(); showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info'); }
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+}
+
 function exportReport() {
   showToast('กำลังเตรียมรายงาน PDF...', 'info');
 
@@ -3675,7 +3772,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.13.3
+   AUTH / LOGIN SYSTEM  v1.14.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3846,7 +3943,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.13.3
+   INTERNAL TEST MODULE  v1.14.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3857,6 +3954,10 @@ const IT_MODULES = {
     title: 'Flow Computer FloBoss S600+ (Full)',
     serials: [
       { key:'fc_sn',   label:'Flow Computer Serial Number' },
+      { key:'cpu_sn',  label:'CPU Module Serial Number' },
+      { key:'io_sn',   label:'I/O Module Serial Number' },
+      { key:'hart_sn', label:'HART Module Serial Number' },
+      { key:'fp_sn',   label:'Front Panel Serial Number' },
     ],
     pageBreakBefore: ['I/O Channels'],
     sections: [
@@ -3905,7 +4006,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.13.3
+   MATERIAL MASTER DATA  v1.14.0
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4083,7 +4184,7 @@ function renderITChecklist() {
   const testerHtml = `
     <div class="it-section-title" style="margin-top:18px">ข้อมูลผู้ทดสอบ</div>
     <div class="it-serial-grid" style="margin-bottom:4px">
-      <div class="it-serial-field field-full">
+      <div class="it-serial-field">
         <label>Tested By</label>
         <input type="text" id="it_tester" placeholder="ชื่อผู้ทดสอบ"
                value="${itTester.name||currentUser?.name||''}"
@@ -4235,15 +4336,10 @@ function saveToStockFromTest() {
 
   // Save to history
   const ts = fmtTimestamp();
-  // Consolidate serials: only keep keys defined by the current module's `serials`
-  // (fc_full now defines only fc_sn → a single Flow Computer Serial Number is stored)
-  const validSerialKeys = (mod.serials || []).map(s => s.key);
-  const cleanSerials = {};
-  validSerialKeys.forEach(k => { if (itSerials[k]) cleanSerials[k] = itSerials[k]; });
   const record = {
     id: 'IT-' + Date.now().toString().slice(-6),
     date, module: itCurrentMod, moduleTitle: mod.title,
-    serialNumbers: cleanSerials,
+    serialNumbers: { ...itSerials },
     tester, designation: itTester.designation||'', company: itTester.company||'', notes: (document.getElementById('it_notes')||{}).value||'',
     witness: (document.getElementById('it_witness')||{}).value||'',
     wdesig: (document.getElementById('it_wdesig')||{}).value||'',
@@ -4603,7 +4699,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.13.3
+   DATA MANAGEMENT MODULE  v1.14.0
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
@@ -4699,9 +4795,8 @@ function renderDMTable(type) {
         <td style="font-family:var(--mono);font-size:0.8rem">${escapeHtml(m.partNo||'—')}</td>
         <td style="font-size:0.82rem">${escapeHtml(m.brand||'—')}</td>
         <td style="font-size:0.82rem">${escapeHtml(m.unit||'—')}</td>
-        <td style="font-family:var(--mono);font-size:0.8rem;color:var(--text3)">${escapeHtml(m.location||'—')}</td>
       </tr>`;
-    }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีวัสดุในทะเบียน (เพิ่มข้อมูลที่ sheet: Materials)</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีวัสดุในทะเบียน (เพิ่มข้อมูลที่ sheet: Materials)</td></tr>';
   }
 }
 
