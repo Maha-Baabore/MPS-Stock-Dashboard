@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.14.2</title>
+<title>MPS Stock Management System v1.15.0</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -932,7 +932,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.14.2</div>
+    <div class="login-footer">MPS Department · v1.15.0</div>
   </div>
 </div>
 
@@ -984,7 +984,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.14.2</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.15.0</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1706,7 +1706,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.14.2 — app.js
+   MPS Stock Management System v1.15.0 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1720,6 +1720,7 @@ const HARDCODED_CONFIG = {
   instSheet:      'Instruments',
   materialsSheet: 'Materials',
   txnSheet:       'StockTransactions',
+  testHistSheet:  'TestHistory',
   gasUrl:         'https://script.google.com/macros/s/AKfycbxqLKfkiC_tkJwt4cgXQ8F4wuvoz5H0S_AeRh7GbkMIrAYhSBlgFQUjZh7gFi_jQ4sy/exec'
 };
 
@@ -1784,7 +1785,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.14.2
+   STOCK LEDGER ENGINE  v1.15.0
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -2032,12 +2033,13 @@ async function loadAllData() {
     usingDemo = true;
   } else {
     try {
-      const [materials, stock, borrow, inst, txns] = await Promise.all([
+      const [materials, stock, borrow, inst, txns, testHist] = await Promise.all([
         gSheetCSV(cfg.materialsSheet),
         gSheetCSV(cfg.stockSheet),
         gSheetCSV(cfg.borrowSheet),
         gSheetCSV(cfg.instSheet),
-        gSheetCSV(cfg.txnSheet)
+        gSheetCSV(cfg.txnSheet),
+        gSheetCSV(cfg.testHistSheet || 'TestHistory')
       ]);
       // Materials Master — SINGLE SOURCE OF TRUTH = the Materials sheet (no seed merge)
       const matOk = materials.length > 0 && materials[0] &&
@@ -2060,6 +2062,34 @@ async function loadAllData() {
       allTxns = txnOk ? txns : [];
       // BorrowReturn: accept empty array as valid
       allBorrow = borrow;
+      // TestHistory: load from Sheets as primary source; localStorage is fallback/legacy only
+      const testHistOk = testHist.length > 0 && testHist[0] &&
+                         !JSON.stringify(testHist[0]).includes('Copyright') &&
+                         !JSON.stringify(testHist[0]).includes('function ');
+      if (testHistOk) {
+        // Map sheet rows → history record objects (only the summary columns that GAS writes)
+        itTestHistory = testHist.map(r => ({
+          id:          r.testId || r.id || '',
+          date:        r.date || '',
+          module:      '',
+          moduleTitle: r.module || '',
+          serialNumbers: { fc_sn: r.serialNumbers || r.serialnumbers || '' },
+          tester:      r.tester || '',
+          passCount:   parseInt(r.passCount || r.passcount || 0),
+          failCount:   parseInt(r.failCount || r.failcount || 0),
+          total:       parseInt(r.total || 0),
+          overall:     (r.overall || '').toLowerCase(),
+          inStock:     (r.inStock || r.instock || '').toString().toLowerCase() === 'true',
+          timestamp:   r.timestamp || '',
+          results: {}, remarks: {}
+        })).filter(r => r.id).reverse(); // Sheets order oldest-first → reverse to newest-first
+        // Sync to localStorage so offline/other tabs stay consistent
+        localStorage.setItem('mps_test_history', JSON.stringify(itTestHistory.slice(0, 100)));
+      } else {
+        // Sheets unavailable → fall back to localStorage (legacy)
+        const stored = localStorage.getItem('mps_test_history');
+        if (stored) { try { itTestHistory = JSON.parse(stored); } catch(e) { itTestHistory = []; } }
+      }
       // Instruments: guard against HTML/JS garbage response
       const instOk = inst.length > 0 && inst[0] &&
                      !JSON.stringify(inst[0]).includes('Copyright') &&
@@ -2094,6 +2124,7 @@ async function loadAllData() {
     populateBorrowSelect();
     if (typeof renderStockOut === 'function') renderStockOut();
     if (currentTab === 'instruments') renderInstruments();
+    if (currentTab === 'internaltest') renderTestHistory();
   }, 0);
 }
 
@@ -3034,47 +3065,50 @@ function exportCSV() {
 
 // ── Export Borrow/Return PDF ──────────────────────────────────────────
 function exportBorrowPDF() {
+  if (!requireRole('admin','user','viewer')) return;
   showToast('กำลังเตรียม PDF...', 'info');
   const now = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
   const filter = (document.getElementById('borrowFilter')||{}).value || 'all';
   const filterLabel = {all:'ทั้งหมด',borrowed:'ยืมอยู่',returned:'คืนแล้ว',overdue:'เกินกำหนด'}[filter]||filter;
-  const filtered = allBorrowRecords.filter(b => {
-    if (filter === 'all') return true;
-    const st = getBorrowStatus(b);
-    return st === filter;
-  });
+  // Fix: use allBorrow (correct state variable) and b.status directly
+  const filtered = allBorrow.filter(b => filter === 'all' || b.status === filter);
   const stTh = { borrowed:'ยืมอยู่', returned:'คืนแล้ว', overdue:'เกินกำหนด' };
   const stColor = { borrowed:'#0077cc', returned:'#16a34a', overdue:'#c0392b' };
   const rows = filtered.map(b => {
-    const st = getBorrowStatus(b);
+    const st = b.status || 'borrowed';
     return '<tr>'
-      + '<td style="font-family:monospace;font-size:10px;color:#0077cc">' + escapeHtml(b.id) + '</td>'
-      + '<td>' + escapeHtml(b.borrower||'—') + '</td>'
+      + '<td style="font-family:monospace;font-size:10px;color:#0077cc">' + escapeHtml(b.id||'—') + '</td>'
+      + '<td>' + escapeHtml(b.borrower||'—') + (b.dept ? '<br><span style="font-size:9px;color:#64748b">'+escapeHtml(b.dept)+'</span>' : '') + '</td>'
       + '<td>' + escapeHtml(b.itemName||'—') + '</td>'
-      + '<td style="text-align:center;font-family:monospace">' + (b.qty||1) + '</td>'
+      + '<td style="text-align:center;font-family:monospace">' + (parseInt(b.qty)||1) + '</td>'
       + '<td style="font-family:monospace;font-size:10px">' + escapeHtml(b.borrowDate||'—') + '</td>'
       + '<td style="font-family:monospace;font-size:10px">' + escapeHtml(b.dueDate||'—') + '</td>'
-      + '<td style="text-align:center"><span style="padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;color:' + (stColor[st]||'#333') + '">' + (stTh[st]||st) + '</span></td>'
+      + '<td style="font-family:monospace;font-size:10px;color:#64748b">' + (st==='returned' ? escapeHtml(b.returnDate||'—') : '—') + '</td>'
+      + '<td style="text-align:center"><span style="padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;color:#fff;background:' + (stColor[st]||'#64748b') + '">' + (stTh[st]||st) + '</span></td>'
       + '</tr>';
   }).join('');
   var html = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>รายการยืม-คืน MPS</title>'
     + '<style>* {box-sizing:border-box;margin:0;padding:0} body {font-family:"Segoe UI",Arial,sans-serif;font-size:11px;color:#1e293b;padding:14mm 12mm}'
-    + '.header {display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;margin-bottom:14px;border-bottom:2.5px solid #1e3a5f}'
-    + '.title {font-size:15px;font-weight:700} .sub {font-size:9px;color:#64748b;margin-top:2px} .meta {text-align:right;font-size:9px;color:#64748b}'
+    + '.no-print {text-align:center;padding:12px;background:#f0f9ff;border-bottom:1px solid #bae6fd;font-size:11px;margin-bottom:16px;border-radius:4px}'
+    + '.no-print button {padding:6px 18px;background:#1e3a5f;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;margin:0 4px}'
+    + '.no-print button:last-child {background:#64748b}'
+    + '.header {display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;margin-bottom:14px;border-bottom:2.5px solid #1e3a5f}'
+    + '.title {font-size:15px;font-weight:700;color:#1e3a5f} .sub {font-size:9px;color:#64748b;margin-top:3px} .meta {text-align:right;font-size:9px;color:#64748b;line-height:1.6}'
     + 'table {width:100%;border-collapse:collapse;font-size:10px} th {background:#1e3a5f;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.4px}'
-    + 'td {padding:5px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle} tr:nth-child(even) td {background:#fafafa}'
-    + '@media print {@page {margin:10mm} body {padding:0}}</style></head><body>'
+    + 'td {padding:5px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle} tr:nth-child(even) td {background:#f8fafc}'
+    + '@media print {@page {margin:10mm;size:A4} body {padding:0} .no-print {display:none}}</style></head><body>'
+    + '<div class="no-print">ตรวจสอบรายการด้านล่าง &nbsp; <button onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button> <button onclick="window.close()">✕ ปิด</button></div>'
     + '<div class="header"><div><div class="title">MPS Stock Management — รายการยืม-คืน</div>'
-    + '<div class="sub">สถานะ: ' + escapeHtml(filterLabel) + ' · พิมพ์โดย: ' + escapeHtml(currentUser&&currentUser.name||'—') + '</div></div>'
-    + '<div class="meta">วันที่พิมพ์: ' + now + '<br>จำนวน: ' + filtered.length + ' รายการ</div></div>'
-    + '<table><thead><tr><th>รหัส</th><th>ผู้ยืม</th><th>สินค้า</th><th>จำนวน</th><th>วันยืม</th><th>กำหนดคืน</th><th>สถานะ</th></tr></thead>'
-    + '<tbody>' + (rows || '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">ไม่มีข้อมูล</td></tr>') + '</tbody></table>'
-    + '<script>window.onload=function(){window.print()}<\/script></body></html>';
+    + '<div class="sub">ตัวกรองสถานะ: ' + escapeHtml(filterLabel) + ' &nbsp;·&nbsp; พิมพ์โดย: ' + escapeHtml(currentUser&&currentUser.name||'—') + '</div></div>'
+    + '<div class="meta">วันที่พิมพ์: ' + now + '<br>จำนวน: <strong>' + filtered.length + '</strong> รายการ</div></div>'
+    + '<table><thead><tr><th>รหัส</th><th>ผู้ยืม / แผนก</th><th>สินค้า</th><th style="text-align:center">จำนวน</th><th>วันยืม</th><th>กำหนดคืน</th><th>วันคืนจริง</th><th style="text-align:center">สถานะ</th></tr></thead>'
+    + '<tbody>' + (rows || '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">ไม่มีข้อมูล</td></tr>') + '</tbody></table>'
+    + '</body></html>';
   var blob = new Blob([html], { type:'text/html;charset=utf-8' });
   var url = URL.createObjectURL(blob);
-  var win = window.open(url, '_blank');
+  var win = window.open(url, '_blank', 'width=1050,height=720');
   if (!win) { var a = document.createElement('a'); a.href = url; a.download = 'MPS_Borrow_' + new Date().toISOString().split('T')[0] + '.html'; a.click(); showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info'); }
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
 }
 
 // ── Export Stock Ledger PDF ───────────────────────────────────────────
@@ -3772,7 +3806,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.14.2
+   AUTH / LOGIN SYSTEM  v1.15.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3943,7 +3977,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.14.2
+   INTERNAL TEST MODULE  v1.15.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -4007,7 +4041,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.14.2
+   MATERIAL MASTER DATA  v1.15.0
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4089,7 +4123,7 @@ let itCurrentGroup = 'fc';
 let itResults    = {};
 let itRemarks    = {};
 let itSerials    = {};
-let itTestHistory = JSON.parse(localStorage.getItem('mps_test_history') || '[]');
+let itTestHistory = [];  // Loaded from TestHistory sheet in loadAllData (localStorage is fallback)
 let itTester     = { name:'', designation:'', company:'', notes:'', witness:'', wdesig:'', wcompany:'', wdate:'' };
 
 function initInternalTest() {
@@ -4382,6 +4416,14 @@ function saveToStockFromTest() {
       existing = { ...stockDef, qty:'0', minQty:'1', partNo:'—', location:'—', status:'ok' };
       allStock.push(existing);
       openingQty[stockDef.id] = 0;   // brand-new item, opening balance 0
+      // Persist new item to Stock sheet so it survives a page refresh
+      if (cfg.gasUrl && cfg.sheetId) {
+        gasWrite('addStockItem', {
+          sheetId: cfg.sheetId, stockSheet: cfg.stockSheet || 'Stock',
+          ...existing,
+          createdAt: fmtTimestamp(), createdBy: currentUser?.name || '—'
+        });
+      }
     }
     record.inStock = true;
     itTestHistory[0].inStock = true;
@@ -4460,6 +4502,10 @@ function clearTestHistory() {
   localStorage.setItem('mps_test_history', '[]');
   renderTestHistory();
   showToast('🗑️ ล้างประวัติการทดสอบทั้งหมดแล้ว', 'success');
+  // Also clear from Sheets
+  if (cfg.gasUrl && cfg.sheetId) {
+    gasWrite('clearTestHistory', { sheetId: cfg.sheetId, testHistSheet: cfg.testHistSheet || 'TestHistory' });
+  }
 }
 
 function deleteTestHistoryItem(idx) {
@@ -4471,6 +4517,10 @@ function deleteTestHistoryItem(idx) {
   localStorage.setItem('mps_test_history', JSON.stringify(itTestHistory.slice(0,100)));
   renderTestHistory();
   showToast('🗑️ ลบรายการทดสอบแล้ว', 'success');
+  // Also delete from Sheets
+  if (cfg.gasUrl && cfg.sheetId && item.id) {
+    gasWrite('deleteTestHistory', { sheetId: cfg.sheetId, testHistSheet: cfg.testHistSheet || 'TestHistory', testId: item.id });
+  }
 }
 
 // ── Export PDF  v1.7.2
@@ -4700,7 +4750,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.14.2
+   DATA MANAGEMENT MODULE  v1.15.0
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
