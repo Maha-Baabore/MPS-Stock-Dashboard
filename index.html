@@ -4188,7 +4188,7 @@ function renderITChecklist() {
       <div class="it-serial-field">
         <label>Tested By</label>
         <input type="text" id="it_tester" placeholder="ชื่อผู้ทดสอบ"
-               value="${itTester.name||currentUser?.name||''}"
+               value="${itTester.name||''}"
                onchange="itTester.name=this.value">
       </div>
       <div class="it-serial-field">
@@ -4199,7 +4199,7 @@ function renderITChecklist() {
       </div>
       <div class="it-serial-field">
         <label>Company</label>
-        <input type="text" id="it_company" placeholder="บริษัท" value="${itTester.company||'PTT'}"
+        <input type="text" id="it_company" placeholder="บริษัท" value="${itTester.company||''}"
                onchange="itTester.company=this.value">
       </div>
       <div class="it-serial-field">
@@ -4499,7 +4499,7 @@ function toggleWitnessDate(val) {
   var dateRaw = (document.getElementById('it_date')   ||{}).value  || new Date().toISOString().split('T')[0];
   var tester  = (document.getElementById('it_tester') ||{}).value  || (currentUser && currentUser.name) || '—';
   var desig   = (document.getElementById('it_desig')  ||{}).value  || '—';
-  var company = (document.getElementById('it_company')||{}).value  || 'PTT';
+  var company = (document.getElementById('it_company')||{}).value  || 'บริษัท';
   var notes    = (document.getElementById('it_notes')   ||{}).value || '';
   var witness  = (document.getElementById('it_witness') ||{}).value || '';
   var wdesig   = (document.getElementById('it_wdesig')  ||{}).value || '';
