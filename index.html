@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.15.1</title>
+<title>MPS Stock Management System v1.15.2</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -932,7 +932,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.15.1</div>
+    <div class="login-footer">MPS Department · v1.15.2</div>
   </div>
 </div>
 
@@ -984,7 +984,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.15.1</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.15.2</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1513,7 +1513,6 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
             <thead>
               <tr>
                 <th style="white-space:nowrap;min-width:90px">วันที่</th>
-                <th style="white-space:nowrap">เวลาบันทึก</th>
                 <th>Module</th>
                 <th>Serial Number</th>
                 <th>ทดสอบโดย</th>
@@ -1525,7 +1524,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
               </tr>
             </thead>
             <tbody id="testHistoryBody">
-              <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>
+              <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>
             </tbody>
           </table>
         </div>
@@ -1706,7 +1705,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.15.1 — app.js
+   MPS Stock Management System v1.15.2 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1785,7 +1784,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.15.1
+   STOCK LEDGER ENGINE  v1.15.2
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -2073,7 +2072,7 @@ async function loadAllData() {
           date:        r.date || '',
           module:      '',
           moduleTitle: r.module || '',
-          // fc_sn column (written separately since v1.15.1) takes priority;
+          // fc_sn column (written separately since v1.15.2) takes priority;
           // fallback: serialNumbers is the full joined string — use it as-is for non-fc_full
           serialNumbers: {
             fc_sn: r.fc_sn || r['fc sn'] || '',
@@ -3807,7 +3806,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.15.1
+   AUTH / LOGIN SYSTEM  v1.15.2
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3978,7 +3977,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.15.1
+   INTERNAL TEST MODULE  v1.15.2
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -4042,7 +4041,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.15.1
+   MATERIAL MASTER DATA  v1.15.2
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4461,7 +4460,7 @@ function renderTestHistory() {
   if (!tbody) return;
   document.getElementById('testHistoryCount').textContent = `${itTestHistory.length} รายการ`;
   if (!itTestHistory.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีประวัติการทดสอบ</td></tr>';
     return;
   }
   tbody.innerHTML = itTestHistory.map((r, idx) => {
@@ -4491,7 +4490,6 @@ function renderTestHistory() {
     const dateDisplay = dateParts.length===3 ? dateParts[2]+'/'+dateParts[1]+'/'+dateParts[0] : r.date||'—';
     return `<tr>
       <td style="font-family:var(--mono);font-size:0.8rem;white-space:nowrap">${dateDisplay}</td>
-      <td style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);white-space:nowrap">${r.timestamp||'—'}</td>
       <td style="font-weight:500">${r.moduleTitle}</td>
       <td style="font-family:var(--mono);font-size:0.78rem;color:var(--text3)">${sns}</td>
       <td>${r.tester}</td>
@@ -4764,7 +4762,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.15.1
+   DATA MANAGEMENT MODULE  v1.15.2
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
