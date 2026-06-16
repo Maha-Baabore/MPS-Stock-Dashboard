@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.15.0</title>
+<title>MPS Stock Management System v1.15.1</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -932,7 +932,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.15.0</div>
+    <div class="login-footer">MPS Department · v1.15.1</div>
   </div>
 </div>
 
@@ -984,7 +984,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.15.0</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.15.1</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1706,7 +1706,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.15.0 — app.js
+   MPS Stock Management System v1.15.1 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1785,7 +1785,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.15.0
+   STOCK LEDGER ENGINE  v1.15.1
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -2073,7 +2073,12 @@ async function loadAllData() {
           date:        r.date || '',
           module:      '',
           moduleTitle: r.module || '',
-          serialNumbers: { fc_sn: r.serialNumbers || r.serialnumbers || '' },
+          // fc_sn column (written separately since v1.15.1) takes priority;
+          // fallback: serialNumbers is the full joined string — use it as-is for non-fc_full
+          serialNumbers: {
+            fc_sn: r.fc_sn || r['fc sn'] || '',
+            _all:  r.serialNumbers || r.serialnumbers || ''
+          },
           tester:      r.tester || '',
           passCount:   parseInt(r.passCount || r.passcount || 0),
           failCount:   parseInt(r.failCount || r.failcount || 0),
@@ -3089,24 +3094,20 @@ function exportBorrowPDF() {
   }).join('');
   var html = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>รายการยืม-คืน MPS</title>'
     + '<style>* {box-sizing:border-box;margin:0;padding:0} body {font-family:"Segoe UI",Arial,sans-serif;font-size:11px;color:#1e293b;padding:14mm 12mm}'
-    + '.no-print {text-align:center;padding:12px;background:#f0f9ff;border-bottom:1px solid #bae6fd;font-size:11px;margin-bottom:16px;border-radius:4px}'
-    + '.no-print button {padding:6px 18px;background:#1e3a5f;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;margin:0 4px}'
-    + '.no-print button:last-child {background:#64748b}'
     + '.header {display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;margin-bottom:14px;border-bottom:2.5px solid #1e3a5f}'
     + '.title {font-size:15px;font-weight:700;color:#1e3a5f} .sub {font-size:9px;color:#64748b;margin-top:3px} .meta {text-align:right;font-size:9px;color:#64748b;line-height:1.6}'
     + 'table {width:100%;border-collapse:collapse;font-size:10px} th {background:#1e3a5f;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.4px}'
     + 'td {padding:5px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle} tr:nth-child(even) td {background:#f8fafc}'
-    + '@media print {@page {margin:10mm;size:A4} body {padding:0} .no-print {display:none}}</style></head><body>'
-    + '<div class="no-print">ตรวจสอบรายการด้านล่าง &nbsp; <button onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button> <button onclick="window.close()">✕ ปิด</button></div>'
+    + '@media print {@page {margin:10mm;size:A4} body {padding:0}}</style></head><body>'
     + '<div class="header"><div><div class="title">MPS Stock Management — รายการยืม-คืน</div>'
     + '<div class="sub">ตัวกรองสถานะ: ' + escapeHtml(filterLabel) + ' &nbsp;·&nbsp; พิมพ์โดย: ' + escapeHtml(currentUser&&currentUser.name||'—') + '</div></div>'
     + '<div class="meta">วันที่พิมพ์: ' + now + '<br>จำนวน: <strong>' + filtered.length + '</strong> รายการ</div></div>'
     + '<table><thead><tr><th>รหัส</th><th>ผู้ยืม / แผนก</th><th>สินค้า</th><th style="text-align:center">จำนวน</th><th>วันยืม</th><th>กำหนดคืน</th><th>วันคืนจริง</th><th style="text-align:center">สถานะ</th></tr></thead>'
     + '<tbody>' + (rows || '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">ไม่มีข้อมูล</td></tr>') + '</tbody></table>'
-    + '</body></html>';
+    + '<script>window.onload=function(){window.print();}<\/script></body></html>';
   var blob = new Blob([html], { type:'text/html;charset=utf-8' });
   var url = URL.createObjectURL(blob);
-  var win = window.open(url, '_blank', 'width=1050,height=720');
+  var win = window.open(url, '_blank');
   if (!win) { var a = document.createElement('a'); a.href = url; a.download = 'MPS_Borrow_' + new Date().toISOString().split('T')[0] + '.html'; a.click(); showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info'); }
   setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
 }
@@ -3806,7 +3807,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.15.0
+   AUTH / LOGIN SYSTEM  v1.15.1
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3977,7 +3978,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.15.0
+   INTERNAL TEST MODULE  v1.15.1
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -4041,7 +4042,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.15.0
+   MATERIAL MASTER DATA  v1.15.1
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4392,15 +4393,18 @@ function saveToStockFromTest() {
   if (cfg.gasUrl && cfg.sheetId) {
     gasWrite('addTestHistory', {
       sheetId: cfg.sheetId,
+      testHistSheet: cfg.testHistSheet || 'TestHistory',
       testId: record.id,
       date: record.date,
       module: record.moduleTitle,
       serialNumbers: Object.values(record.serialNumbers||{}).filter(Boolean).join(', '),
+      fc_sn: record.serialNumbers?.fc_sn || '',
       tester: record.tester,
       passCount: record.passCount,
       failCount: record.failCount,
       total: record.total,
       overall: record.overall,
+      inStock: String(record.inStock || false),
       timestamp: record.timestamp,
     });
   }
@@ -4464,13 +4468,23 @@ function renderTestHistory() {
     const ovCls = r.overall==='pass' ? 'badge-pass-all' : r.overall==='partial' ? 'badge-partial' : 'badge-has-fail';
     const ovTh  = r.overall==='pass' ? 'Pass ทั้งหมด' : r.overall==='partial' ? 'บางส่วน' : 'มี Fail';
     const stk   = r.inStock ? '<span class="badge badge-in-stock">เข้าคลังแล้ว</span>' : '<span class="badge badge-not-saved">ยังไม่เพิ่ม</span>';
-    // For Flow Computer (Full), show ONLY the Flow Computer Serial Number (fc_sn),
-    // even for legacy records that stored several module serials.
+    // Serial number display logic:
+    // fc_full → show ONLY the Flow Computer S/N (fc_sn key).
+    //   Records from Sheets have { fc_sn, _all }; legacy localStorage records have { fc_sn, cpu_sn, ... }
+    // Other modules → show all serials joined
     let sns;
-    if (r.module === 'fc_full' && r.serialNumbers) {
-      sns = (r.serialNumbers.fc_sn || Object.values(r.serialNumbers).filter(Boolean)[0] || '—');
+    const sn = r.serialNumbers || {};
+    const isFcFull = r.module === 'fc_full' || r.moduleTitle === 'Flow Computer FloBoss S600+ (Full)';
+    if (isFcFull) {
+      // fc_sn is always the Flow Computer unit serial (e.g. "214002786")
+      sns = sn.fc_sn || '';
+      // If fc_sn is blank but we have _all (Sheets fallback), take the portion before the first ", "
+      if (!sns && sn._all) sns = sn._all.split(',')[0].trim();
+      sns = sns || '—';
     } else {
-      sns = Object.values(r.serialNumbers||{}).filter(Boolean).join(', ') || '—';
+      // Non-fc_full: join all real serial values (skip internal _all key)
+      const vals = Object.entries(sn).filter(([k,v]) => k !== '_all' && v).map(([,v]) => v);
+      sns = vals.length ? vals.join(', ') : (sn._all || '—');
     }
     // Convert YYYY-MM-DD → DD/MM/YYYY
     const dateParts = (r.date||'').split('-');
@@ -4750,7 +4764,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.15.0
+   DATA MANAGEMENT MODULE  v1.15.1
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
