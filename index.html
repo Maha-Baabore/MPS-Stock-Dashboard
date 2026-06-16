@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.13.0</title>
+<title>MPS Stock Management System v1.13.1</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -931,7 +931,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.13.0</div>
+    <div class="login-footer">MPS Department · v1.13.1</div>
   </div>
 </div>
 
@@ -983,7 +983,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.0</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.1</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1697,7 +1697,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.13.0 — app.js
+   MPS Stock Management System v1.13.1 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1775,7 +1775,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.13.0
+   STOCK LEDGER ENGINE  v1.13.1
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -3674,7 +3674,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.13.0
+   AUTH / LOGIN SYSTEM  v1.13.1
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3845,7 +3845,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.13.0
+   INTERNAL TEST MODULE  v1.13.1
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3904,7 +3904,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.13.0
+   MATERIAL MASTER DATA  v1.13.1
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4232,10 +4232,15 @@ function saveToStockFromTest() {
 
   // Save to history
   const ts = fmtTimestamp();
+  // Consolidate serials: only keep keys defined by the current module's `serials`
+  // (fc_full now defines only fc_sn → a single Flow Computer Serial Number is stored)
+  const validSerialKeys = (mod.serials || []).map(s => s.key);
+  const cleanSerials = {};
+  validSerialKeys.forEach(k => { if (itSerials[k]) cleanSerials[k] = itSerials[k]; });
   const record = {
     id: 'IT-' + Date.now().toString().slice(-6),
     date, module: itCurrentMod, moduleTitle: mod.title,
-    serialNumbers: { ...itSerials },
+    serialNumbers: cleanSerials,
     tester, designation: itTester.designation||'', company: itTester.company||'', notes: (document.getElementById('it_notes')||{}).value||'',
     witness: (document.getElementById('it_witness')||{}).value||'',
     wdesig: (document.getElementById('it_wdesig')||{}).value||'',
@@ -4588,7 +4593,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.13.0
+   DATA MANAGEMENT MODULE  v1.13.1
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
@@ -4771,7 +4776,7 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#dm_name_suggest') && e.target.id !== 'dm_name') hideDmSuggest();
 });
 
-
+function openDMModal(type, mode, idx) {
   if (!requireRole('admin')) return;
   dmModalType = type;
   dmModalMode = mode;
