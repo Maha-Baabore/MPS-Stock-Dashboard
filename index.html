@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.13.2</title>
+<title>MPS Stock Management System v1.13.3</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -932,7 +932,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.13.2</div>
+    <div class="login-footer">MPS Department · v1.13.3</div>
   </div>
 </div>
 
@@ -984,7 +984,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.2</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.3</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1698,7 +1698,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.13.2 — app.js
+   MPS Stock Management System v1.13.3 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1776,7 +1776,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.13.2
+   STOCK LEDGER ENGINE  v1.13.3
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -3675,7 +3675,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.13.2
+   AUTH / LOGIN SYSTEM  v1.13.3
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3846,7 +3846,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.13.2
+   INTERNAL TEST MODULE  v1.13.3
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3905,7 +3905,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.13.2
+   MATERIAL MASTER DATA  v1.13.3
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4221,10 +4221,12 @@ function saveToStockFromTest() {
 
   // ── Validation: an item with ANY "Fail" result cannot be added to inventory.
   // The test is still recorded in history (so the failure is tracked), but the
-  // stock addition is blocked. Helper canSaveToInventory() centralizes the rule.
+  // stock addition is blocked.
+  // Checklist keys are 's{sectionIndex}i{itemIndex}'; items are plain strings.
   const failedLabels = [];
-  mod.sections.forEach(s => s.items.forEach(it => {
-    if (itResults[it.id] === 'fail') failedLabels.push(it.label || it.id);
+  mod.sections.forEach((sec, si) => sec.items.forEach((item, ii) => {
+    const key = 's' + si + 'i' + ii;
+    if (itResults[key] === 'fail') failedLabels.push(item);
   }));
 
   const overallPass = failCount === 0 && passCount === allItems.length;
@@ -4601,7 +4603,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.13.2
+   DATA MANAGEMENT MODULE  v1.13.3
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
