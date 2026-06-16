@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.13.1</title>
+<title>MPS Stock Management System v1.13.2</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -538,8 +538,9 @@ canvas { max-width: 100%; }
 .it-serial-field input {
   padding: 7px 10px; background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text); font-family: var(--mono);
-  font-size: 0.85rem; outline: none; transition: border-color 0.15s;
+  font-size: 0.85rem; outline: none; transition: border-color 0.15s; width: 100%; box-sizing: border-box;
 }
+.it-serial-field.field-full { grid-column: 1 / -1; }
 .it-serial-field input:focus { border-color: var(--accent2); }
 
 .it-checklist-body { padding: 16px 24px; }
@@ -877,7 +878,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 .dm-form-grid input, .dm-form-grid select {
   padding:8px 11px; background:var(--bg3); border:1px solid var(--border);
   border-radius:var(--radius-sm); color:var(--text); font-family:var(--font);
-  font-size:0.87rem; outline:none; transition:border-color 0.15s;
+  font-size:0.87rem; outline:none; transition:border-color 0.15s; width:100%; box-sizing:border-box;
 }
 .dm-form-grid input:focus, .dm-form-grid select:focus { border-color:var(--accent2); }
 .dm-form-grid input[readonly] { cursor:not-allowed; }
@@ -931,7 +932,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.13.1</div>
+    <div class="login-footer">MPS Department · v1.13.2</div>
   </div>
 </div>
 
@@ -983,7 +984,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.1</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.2</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1697,7 +1698,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.13.1 — app.js
+   MPS Stock Management System v1.13.2 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1775,7 +1776,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.13.1
+   STOCK LEDGER ENGINE  v1.13.2
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -3674,7 +3675,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.13.1
+   AUTH / LOGIN SYSTEM  v1.13.2
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3845,7 +3846,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.13.1
+   INTERNAL TEST MODULE  v1.13.2
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3904,7 +3905,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.13.1
+   MATERIAL MASTER DATA  v1.13.2
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4082,7 +4083,7 @@ function renderITChecklist() {
   const testerHtml = `
     <div class="it-section-title" style="margin-top:18px">ข้อมูลผู้ทดสอบ</div>
     <div class="it-serial-grid" style="margin-bottom:4px">
-      <div class="it-serial-field" style="grid-column:span 2">
+      <div class="it-serial-field field-full">
         <label>Tested By</label>
         <input type="text" id="it_tester" placeholder="ชื่อผู้ทดสอบ"
                value="${itTester.name||currentUser?.name||''}"
@@ -4322,7 +4323,14 @@ function renderTestHistory() {
     const ovCls = r.overall==='pass' ? 'badge-pass-all' : r.overall==='partial' ? 'badge-partial' : 'badge-has-fail';
     const ovTh  = r.overall==='pass' ? 'Pass ทั้งหมด' : r.overall==='partial' ? 'บางส่วน' : 'มี Fail';
     const stk   = r.inStock ? '<span class="badge badge-in-stock">เข้าคลังแล้ว</span>' : '<span class="badge badge-not-saved">ยังไม่เพิ่ม</span>';
-    const sns   = Object.values(r.serialNumbers||{}).filter(Boolean).join(', ') || '—';
+    // For Flow Computer (Full), show ONLY the Flow Computer Serial Number (fc_sn),
+    // even for legacy records that stored several module serials.
+    let sns;
+    if (r.module === 'fc_full' && r.serialNumbers) {
+      sns = (r.serialNumbers.fc_sn || Object.values(r.serialNumbers).filter(Boolean)[0] || '—');
+    } else {
+      sns = Object.values(r.serialNumbers||{}).filter(Boolean).join(', ') || '—';
+    }
     // Convert YYYY-MM-DD → DD/MM/YYYY
     const dateParts = (r.date||'').split('-');
     const dateDisplay = dateParts.length===3 ? dateParts[2]+'/'+dateParts[1]+'/'+dateParts[0] : r.date||'—';
@@ -4593,7 +4601,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.13.1
+   DATA MANAGEMENT MODULE  v1.13.2
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
@@ -4802,7 +4810,7 @@ function openDMModal(type, mode, idx) {
         <div class="form-group"><label>ชื่อสินค้า *
           ${mode==='add' ? '<span style="font-size:0.7rem;color:var(--accent2);font-weight:400;margin-left:6px">← หรือค้นหาจากชื่อ</span>' : ''}
         </label>
-          <div style="position:relative">
+          <div style="position:relative;width:100%">
             <input type="text" id="dm_name" value="${escapeHtml(d.name||'')}" placeholder="ชื่อสินค้า"
               ${mode==='add'?'oninput="dmAutoFillFromName(this.value)" autocomplete="off"':''}>
             <div id="dm_name_suggest" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--bg2);border:1px solid var(--accent2);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);max-height:180px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.25)"></div>
