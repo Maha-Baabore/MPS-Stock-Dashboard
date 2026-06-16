@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.12.0</title>
+<title>MPS Stock Management System v1.13.0</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -239,7 +239,7 @@ body {
 }
 .table-title { font-weight: 600; font-size: 0.95rem; }
 .table-actions { display: flex; gap: 10px; align-items: center; }
-.table-actions select, #borrowFilter {
+.table-actions select, #borrowFilter, #soLedgerFilter {
   padding: 6px 12px; background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text2); font-family: var(--font);
   font-size: 0.82rem; cursor: pointer; outline: none;
@@ -314,12 +314,7 @@ tbody tr:last-child td { border-bottom: none; }
 .stockout-form-header h3 svg { width: 16px; height: 16px; color: var(--danger); flex-shrink: 0; }
 .stockout-form-header p { margin: 0; font-size: 0.74rem; color: var(--text3); line-height: 1.4; }
 .stockout-form-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px; }
-/* Stock Out ledger header */
-.stockout-ledger-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; border-bottom: 1px solid var(--border);
-  background: var(--bg3);
-}
+/* Stock Out ledger header — now uses .table-header style */
 
 .form-title { padding: 0; }
 .form-title-tabs { display: flex; }
@@ -536,7 +531,7 @@ canvas { max-width: 100%; }
 }
 .it-form-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 14px; }
 .it-serial-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;
 }
 .it-serial-field { display: flex; flex-direction: column; gap: 4px; }
 .it-serial-field label { font-size: 0.75rem; color: var(--text3); font-weight: 600; }
@@ -936,7 +931,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.12.0</div>
+    <div class="login-footer">MPS Department · v1.13.0</div>
   </div>
 </div>
 
@@ -988,7 +983,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.12.0</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.13.0</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1266,13 +1261,15 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
         </div>
 
         <div class="borrow-list-card">
-          <div class="stockout-ledger-header">
+          <div class="table-header">
             <span class="table-title">ประวัติการเคลื่อนไหวสต็อก (Stock Ledger)</span>
-            <select id="soLedgerFilter" onchange="renderStockOut()" style="width:auto">
-              <option value="all">ทั้งหมด</option>
-              <option value="OUT">เบิกออก (OUT)</option>
-              <option value="IN">รับเข้า (IN)</option>
-            </select>
+            <div class="table-actions">
+              <select id="soLedgerFilter" onchange="renderStockOut()">
+                <option value="all">ทั้งหมด</option>
+                <option value="OUT">เบิกออก (OUT)</option>
+                <option value="IN">รับเข้า (IN)</option>
+              </select>
+            </div>
           </div>
           <div class="table-wrapper">
             <table>
@@ -1280,9 +1277,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
                 <th>เวลา</th><th>ประเภท</th><th>รหัส</th><th>สินค้า</th>
                 <th>จำนวน</th><th>คงเหลือ</th><th>เหตุผล</th><th>โดย</th>
               </tr></thead>
-              <tbody id="soLedgerBody">
-                <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีการเคลื่อนไหว</td></tr>
-              </tbody>
+              <tbody id="soLedgerBody"></tbody>
             </table>
           </div>
         </div>
@@ -1702,7 +1697,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.12.0 — app.js
+   MPS Stock Management System v1.13.0 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1780,7 +1775,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.12.0
+   STOCK LEDGER ENGINE  v1.13.0
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -2418,9 +2413,17 @@ function renderStockOut() {
   const tbody = document.getElementById('soLedgerBody');
   if (!tbody) return;
   const filter = (document.getElementById('soLedgerFilter')||{}).value || 'all';
-  const rows = allTxns.filter(t => filter === 'all' || t.type === filter);
+  // Filter out ADJUST rows with no itemId (legacy opening-balance placeholders)
+  const rows = allTxns.filter(t => {
+    if (!t.itemId && !t.itemName) return false; // skip empty/placeholder rows
+    return filter === 'all' || t.type === filter;
+  });
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีการเคลื่อนไหว</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:32px 20px">
+      <svg viewBox="0 0 24 24" fill="none" style="width:28px;height:28px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;opacity:0.3"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+      <div style="font-size:0.87rem;font-weight:500;margin-bottom:4px">ยังไม่มีการเคลื่อนไหว</div>
+      <div style="font-size:0.78rem;opacity:0.7">ประวัติการเบิกออกและรับเข้าจะปรากฏที่นี่</div>
+    </td></tr>`;
     return;
   }
   const typeBadge = (t) => {
@@ -2433,7 +2436,8 @@ function renderStockOut() {
     <td>${typeBadge(t.type)}</td>
     <td style="font-family:var(--mono);font-size:0.8rem;color:var(--accent2)">${escapeHtml(t.itemId||'')}</td>
     <td>${escapeHtml(t.itemName||'')}</td>
-    <td style="font-family:var(--mono);font-weight:700;color:${t.type==='OUT'?'var(--danger)':'var(--success)'}">${t.type==='OUT'?'−':'+'}${escapeHtml(t.qty||'0')}</td>
+    <td style="font-family:var(--mono);font-weight:700;color:${t.type==='OUT'?'var(--danger)':'var(--success)'}">
+      ${t.type==='OUT'?'−':'+'}${escapeHtml(t.qty||'0')}</td>
     <td style="font-family:var(--mono)">${escapeHtml(t.balanceAfter||'—')}</td>
     <td style="font-size:0.82rem">${escapeHtml(t.reason||'')}${t.reference?'<br><span style="font-size:0.7rem;color:var(--text3)">'+escapeHtml(t.reference)+'</span>':''}</td>
     <td style="font-size:0.82rem">${escapeHtml(t.user||'—')}</td>
@@ -3670,7 +3674,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.12.0
+   AUTH / LOGIN SYSTEM  v1.13.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3841,7 +3845,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.12.0
+   INTERNAL TEST MODULE  v1.13.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3900,7 +3904,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.12.0
+   MATERIAL MASTER DATA  v1.13.0
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4584,7 +4588,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.12.0
+   DATA MANAGEMENT MODULE  v1.13.0
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
@@ -4696,7 +4700,78 @@ function _dv(field) {
   return escapeHtml(d[field] || '');
 }
 
-function openDMModal(type, mode, idx) {
+// ── Auto-fill stock modal from Material Master ──────────────────────────────
+function dmApplyMaterial(m, id) {
+  // Apply a material record (from MATERIAL_MASTER or MATERIAL_SEED) to the open modal
+  if (!m) return;
+  const catMap = { fc:'fc', gc:'gc', acc:'acc', flow:'fc', 'flow computer':'fc',
+                   'gas chromatograph':'gc', 'online gc':'gc', accessories:'acc', accessory:'acc', ac:'acc' };
+  const setVal = (id2, val) => { const el = document.getElementById(id2); if (el && val) el.value = val; };
+  if (id) setVal('dm_id', id.toUpperCase());
+  setVal('dm_name',     m.name);
+  setVal('dm_partNo',   m.partNo !== '—' ? m.partNo : '');
+  setVal('dm_brand',    m.brand);
+  setVal('dm_unit',     m.unit);
+  setVal('dm_location', m.location);
+  const catEl = document.getElementById('dm_cat');
+  if (catEl && m.category) {
+    const norm = catMap[(m.category||'').toLowerCase().trim()] || m.category;
+    catEl.value = norm;
+  }
+  // Highlight auto-filled fields briefly
+  ['dm_name','dm_partNo','dm_brand','dm_unit','dm_location'].forEach(fid => {
+    const el = document.getElementById(fid);
+    if (el && el.value) {
+      el.style.borderColor = 'var(--accent2)';
+      el.style.background  = 'rgba(0,153,255,0.06)';
+      setTimeout(() => { el.style.borderColor = ''; el.style.background = ''; }, 1800);
+    }
+  });
+  hideDmSuggest();
+}
+
+function dmAutoFillFromId(val) {
+  const id = (val||'').trim().toUpperCase();
+  if (!id) return;
+  // Try MATERIAL_MASTER first, then MATERIAL_SEED fallback
+  const m = MATERIAL_MASTER[id] || MATERIAL_SEED[id];
+  if (m) dmApplyMaterial(m, id);
+}
+
+function dmAutoFillFromName(val) {
+  const q = (val||'').trim().toLowerCase();
+  const suggest = document.getElementById('dm_name_suggest');
+  if (!suggest) return;
+  if (q.length < 2) { suggest.style.display = 'none'; return; }
+  // Search MATERIAL_MASTER + MATERIAL_SEED by name
+  const allEntries = [
+    ...Object.entries(MATERIAL_MASTER),
+    ...Object.entries(MATERIAL_SEED).filter(([id]) => !MATERIAL_MASTER[id])
+  ];
+  const matches = allEntries.filter(([, m]) => m.name && m.name.toLowerCase().includes(q)).slice(0, 8);
+  if (!matches.length) { suggest.style.display = 'none'; return; }
+  suggest.innerHTML = matches.map(([id, m]) =>
+    `<div onclick="dmApplyMaterial(${JSON.stringify(m).replace(/"/g,'&quot;')}, '${escapeHtml(id)}')"
+      style="padding:8px 12px;cursor:pointer;font-size:0.84rem;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"
+      onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <span style="font-family:var(--mono);font-size:0.75rem;color:var(--accent2);min-width:60px">${escapeHtml(id)}</span>
+      <span style="color:var(--text)">${escapeHtml(m.name)}</span>
+    </div>`
+  ).join('');
+  suggest.style.display = 'block';
+}
+
+function hideDmSuggest() {
+  const el = document.getElementById('dm_name_suggest');
+  if (el) el.style.display = 'none';
+}
+
+// Close suggestion dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#dm_name_suggest') && e.target.id !== 'dm_name') hideDmSuggest();
+});
+
+
   if (!requireRole('admin')) return;
   dmModalType = type;
   dmModalMode = mode;
@@ -4714,10 +4789,19 @@ function openDMModal(type, mode, idx) {
     descEl.textContent = 'ข้อมูลจะถูกบันทึกลง Google Sheets sheet Stock';
     bodyEl.innerHTML = `
       <div class="dm-form-grid">
-        <div class="form-group"><label>รหัสสินค้า *</label>
-          <input type="text" id="dm_id" value="${escapeHtml(d.id||'')}" placeholder="FC-001" ${mode==='edit'?'readonly style="opacity:0.6"':''}></div>
-        <div class="form-group"><label>ชื่อสินค้า *</label>
-          <input type="text" id="dm_name" value="${escapeHtml(d.name||'')}" placeholder="ชื่อสินค้า"></div>
+        <div class="form-group"><label>รหัสสินค้า *
+          ${mode==='add' ? '<span style="font-size:0.7rem;color:var(--accent2);font-weight:400;margin-left:6px">← พิมพ์เพื่อดึงข้อมูลอัตโนมัติ</span>' : ''}
+        </label>
+          <input type="text" id="dm_id" value="${escapeHtml(d.id||'')}" placeholder="FC-001"
+            ${mode==='edit'?'readonly style="opacity:0.6"':'oninput="dmAutoFillFromId(this.value)"'}></div>
+        <div class="form-group"><label>ชื่อสินค้า *
+          ${mode==='add' ? '<span style="font-size:0.7rem;color:var(--accent2);font-weight:400;margin-left:6px">← หรือค้นหาจากชื่อ</span>' : ''}
+        </label>
+          <div style="position:relative">
+            <input type="text" id="dm_name" value="${escapeHtml(d.name||'')}" placeholder="ชื่อสินค้า"
+              ${mode==='add'?'oninput="dmAutoFillFromName(this.value)" autocomplete="off"':''}>
+            <div id="dm_name_suggest" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--bg2);border:1px solid var(--accent2);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);max-height:180px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.25)"></div>
+          </div></div>
         <div class="form-group"><label>หมวดหมู่</label>
           <select id="dm_cat">
             <option value="fc"  ${d.category==='fc' ?'selected':''}>Flow Computer</option>
