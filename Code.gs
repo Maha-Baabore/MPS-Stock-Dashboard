@@ -64,6 +64,10 @@ function doGet(e) {
       case 'deleteMaterial':
         return deleteRow_(e, e.parameter.materialsSheet || 'Materials');
 
+      // ── Stock Transactions ledger ──────────────────────────
+      case 'addTxn':
+        return appendTxn_(e);
+
       default:
         return jsonOut_({ ok: false, error: 'unknown action: ' + action });
     }
@@ -291,10 +295,39 @@ function addTestHistory_(e) {
   return jsonOut_({ ok: true, testId: p.testId, mode: 'add' });
 }
 
+/* Append a stock-movement transaction to the StockTransactions ledger. */
+function appendTxn_(e) {
+  var p = e.parameter;
+  var sh = getSheet_(e, p.txnSheet || 'StockTransactions',
+    ['txnId','timestamp','type','itemId','itemName','qty','balanceAfter','reason','reference','user','note']);
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['txnId','timestamp','type','itemId','itemName','qty','balanceAfter','reason','reference','user','note']);
+  }
+  var headers = getHeaders_(sh);
+  var map = {
+    txnid: p.txnId || '',
+    timestamp: p.timestamp || '',
+    type: p.type || '',
+    itemid: p.itemId || '',
+    itemname: p.itemName || '',
+    qty: p.qty || '',
+    balanceafter: p.balanceAfter || '',
+    reason: p.reason || '',
+    reference: p.reference || '',
+    user: p.user || '',
+    note: p.note || ''
+  };
+  var row = headers.map(function (h) {
+    return map[String(h).toLowerCase().replace(/[\s_]/g, '')] || '';
+  });
+  sh.appendRow(row);
+  return jsonOut_({ ok: true, txnId: p.txnId, type: p.type, mode: 'add' });
+}
+
 /* Control keys are NOT written as data columns. */
 function isDataKey_(k) {
   var control = ['action','sheetId','stockSheet','borrowSheet','instSheet',
-                 'materialsSheet','testSheet','delta','note'];
+                 'materialsSheet','testSheet','txnSheet','delta','note'];
   return control.indexOf(k) < 0;
 }
 

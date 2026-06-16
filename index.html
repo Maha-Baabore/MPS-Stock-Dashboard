@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.10.3</title>
+<title>MPS Stock Management System v1.11.0</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -794,6 +794,7 @@ body.viewer-mode #btnBorrow,
 body.viewer-mode #btnReturn { opacity: 0.4; pointer-events: none; }
 /* Viewer ซ่อน nav: ยืม/คืน, Internal Test, Data Manage */
 body.viewer-mode [data-tab="borrow"],
+body.viewer-mode [data-tab="stockout"],
 body.viewer-mode [data-tab="internaltest"],
 body.viewer-mode [data-tab="datamanage"] { display: none !important; }
 /* Viewer: ซ่อนปุ่ม Export CSV (ที่คลังสินค้า) */
@@ -908,7 +909,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.10.3</div>
+    <div class="login-footer">MPS Department · v1.11.0</div>
   </div>
 </div>
 
@@ -934,6 +935,10 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
         <svg viewBox="0 0 24 24" fill="none"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12M4 17l4 4M4 17l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>ยืม / คืน</span>
       </button>
+      <button class="nav-item" data-tab="stockout">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>เบิกออก</span>
+      </button>
       <button class="nav-item" data-tab="report">
         <svg viewBox="0 0 24 24" fill="none"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/></svg>
         <span>รายงาน</span>
@@ -956,7 +961,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.10.3</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.11.0</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1183,6 +1188,63 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
               </thead>
               <tbody id="borrowTableBody">
                 <tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div> กำลังโหลด...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: เบิกออก / Stock Out -->
+    <div class="tab-content" id="tab-stockout">
+      <div class="borrow-layout">
+        <div class="borrow-form-card">
+          <h3 style="margin:0 0 4px;font-size:1rem">เบิกสินค้าออกจากคลัง</h3>
+          <div style="font-size:0.74rem;color:var(--text3);margin-bottom:14px">บันทึกการเบิกออกแบบถาวร — ยอดคงเหลือคำนวณจากบัญชีเดินสะพัด (ledger)</div>
+          <div class="form-group">
+            <label>สินค้าที่เบิก *</label>
+            <select id="soItem" onchange="onStockOutItemChange()"></select>
+            <div id="soBalanceHint" style="font-size:0.74rem;color:var(--text3);margin-top:4px"></div>
+          </div>
+          <div class="form-group">
+            <label>จำนวน *</label>
+            <input type="number" id="soQty" min="1" value="1" oninput="onStockOutItemChange()">
+          </div>
+          <div class="form-group">
+            <label>เหตุผล (Reason) *</label>
+            <select id="soReason">
+              <option value="ใช้งาน/สิ้นเปลือง (Consumption)">ใช้งาน/สิ้นเปลือง (Consumption)</option>
+              <option value="ติดตั้งเข้าเครื่อง (Install into unit)">ติดตั้งเข้าเครื่อง (Install into unit)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>อ้างอิง (Work Order / Unit S/N)</label>
+            <input type="text" id="soRef" placeholder="เช่น WO-1234 หรือ S/N ของเครื่อง">
+          </div>
+          <div class="form-group">
+            <label>หมายเหตุ</label>
+            <textarea id="soNote" rows="2" placeholder="รายละเอียดเพิ่มเติม"></textarea>
+          </div>
+          <button class="btn-submit" style="width:100%" onclick="submitStockOut()">ยืนยันการเบิกออก</button>
+        </div>
+
+        <div class="borrow-list-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="table-title">ประวัติการเคลื่อนไหวสต็อก (Stock Ledger)</span>
+            <select id="soLedgerFilter" onchange="renderStockOut()" style="width:auto">
+              <option value="all">ทั้งหมด</option>
+              <option value="OUT">เบิกออก (OUT)</option>
+              <option value="IN">รับเข้า (IN)</option>
+            </select>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>เวลา</th><th>ประเภท</th><th>รหัส</th><th>สินค้า</th>
+                <th>จำนวน</th><th>คงเหลือ</th><th>เหตุผล</th><th>โดย</th>
+              </tr></thead>
+              <tbody id="soLedgerBody">
+                <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีการเคลื่อนไหว</td></tr>
               </tbody>
             </table>
           </div>
@@ -1603,7 +1665,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.10.3 — app.js
+   MPS Stock Management System v1.11.0 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1616,6 +1678,7 @@ const HARDCODED_CONFIG = {
   borrowSheet:    'BorrowReturn',
   instSheet:      'Instruments',
   materialsSheet: 'Materials',
+  txnSheet:       'StockTransactions',
   gasUrl:         'https://script.google.com/macros/s/AKfycbxqLKfkiC_tkJwt4cgXQ8F4wuvoz5H0S_AeRh7GbkMIrAYhSBlgFQUjZh7gFi_jQ4sy/exec'
 };
 
@@ -1673,9 +1736,81 @@ function debounce(fn, ms) {
 let allStock   = [];   // raw stock data from Sheets
 let allBorrow  = [];   // raw borrow/return log from Sheets
 let allInstruments = []; // raw instruments from Sheets
+let allTxns    = [];   // StockTransactions ledger (IN / OUT / ADJUST)
+let openingQty = {};   // itemId → opening balance (from Stock sheet qty column)
 let currentCat = 'all';
 let currentTab = 'warehouse';
 let isLoading  = false;
+
+/* ═══════════════════════════════════════════════════════════
+   STOCK LEDGER ENGINE  v1.11.0
+   Quantity is DERIVED, not stored:
+     closing balance = opening balance (Stock sheet qty)
+                       + Σ(IN transactions) − Σ(OUT transactions)
+                       ± Σ(ADJUST transactions)
+   The StockTransactions sheet is the source of truth for every
+   movement. The Stock sheet `qty` is treated as the opening
+   balance (ยอดยกมา) as of the start of the ledger.
+   ═══════════════════════════════════════════════════════════ */
+
+// Signed effect of a transaction on the running balance.
+function txnSignedQty(t) {
+  const n = parseInt(t.qty) || 0;
+  if (t.type === 'OUT')    return -Math.abs(n);
+  if (t.type === 'ADJUST') return n;            // ADJUST qty may be negative
+  return Math.abs(n);                           // IN (and anything else) adds
+}
+
+// Capture opening balances from the freshly-loaded Stock sheet.
+function captureOpeningBalances() {
+  openingQty = {};
+  allStock.forEach(it => { openingQty[(it.id||'').trim()] = parseInt(it.qty) || 0; });
+}
+
+// Recompute every item's displayed qty = opening + ledger movements.
+function recomputeBalances() {
+  const movement = {};
+  allTxns.forEach(t => {
+    const id = (t.itemId||'').trim();
+    if (!id) return;
+    movement[id] = (movement[id] || 0) + txnSignedQty(t);
+  });
+  allStock.forEach(it => {
+    const id = (it.id||'').trim();
+    const bal = (openingQty[id] || 0) + (movement[id] || 0);
+    it.qty = String(bal);
+    // keep status in sync with the derived balance + minQty
+    const min = parseInt(it.minQty) || 0;
+    it.status = bal <= 0 ? 'out' : (min > 0 && bal <= min ? 'low' : 'ok');
+  });
+}
+
+// Current derived balance for one item (used by Stock Out / borrow validation).
+function currentBalance(itemId) {
+  const it = allStock.find(i => (i.id||'').trim() === (itemId||'').trim());
+  return it ? (parseInt(it.qty) || 0) : 0;
+}
+
+// Append a transaction locally + recompute + persist to Sheets.
+async function recordTxn({ type, itemId, itemName, qty, reason, reference, note }) {
+  const balanceAfter = currentBalance(itemId) + txnSignedQty({ type, qty });
+  const txn = {
+    txnId: 'TX-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(-2).toUpperCase(),
+    timestamp: fmtTimestamp(),
+    type, itemId, itemName: itemName || '',
+    qty: String(Math.abs(parseInt(qty) || 0)),
+    reason: reason || '', user: currentUser?.name || '—',
+    reference: reference || '', note: note || '',
+    balanceAfter: String(balanceAfter),
+  };
+  allTxns.unshift(txn);
+  recomputeBalances();
+  if (cfg.gasUrl && cfg.sheetId) {
+    return await gasWrite('addTxn', { txnSheet: cfg.txnSheet || 'StockTransactions', ...txn });
+  }
+  return true;
+}
+
 
 // ──────────── INIT ────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -1851,21 +1986,24 @@ async function loadAllData() {
     allStock       = getDemoStock();
     allBorrow      = getDemoBorrow();
     allInstruments = getDemoInstruments();
+    allTxns        = [];
+    captureOpeningBalances();
     usingDemo = true;
   } else {
     try {
-      const [materials, stock, borrow, inst] = await Promise.all([
+      const [materials, stock, borrow, inst, txns] = await Promise.all([
         gSheetCSV(cfg.materialsSheet),
         gSheetCSV(cfg.stockSheet),
         gSheetCSV(cfg.borrowSheet),
-        gSheetCSV(cfg.instSheet)
+        gSheetCSV(cfg.instSheet),
+        gSheetCSV(cfg.txnSheet)
       ]);
       // Materials Master — SINGLE SOURCE OF TRUTH = the Materials sheet (no seed merge)
       const matOk = materials.length > 0 && materials[0] &&
                     !JSON.stringify(materials[0]).includes('Copyright') &&
                     !JSON.stringify(materials[0]).includes('function ');
       buildMaterialMaster(matOk ? materials : []);
-      // Stock — display EXACTLY what the Stock sheet contains (raw, no transformation)
+      // Stock — the qty column is the OPENING BALANCE; closing balance is derived from the ledger
       if (stock.length) {
         allStock = stock;
       } else {
@@ -1873,6 +2011,12 @@ async function loadAllData() {
         usingDemo = true;
         showToast('⚠️ โหลด Stock sheet ไม่สำเร็จ — กำลังแสดง demo data', 'warn');
       }
+      captureOpeningBalances();
+      // StockTransactions ledger (accept empty as valid — no movements yet)
+      const txnOk = txns.length > 0 && txns[0] &&
+                    !JSON.stringify(txns[0]).includes('Copyright') &&
+                    !JSON.stringify(txns[0]).includes('function ');
+      allTxns = txnOk ? txns : [];
       // BorrowReturn: accept empty array as valid
       allBorrow = borrow;
       // Instruments: guard against HTML/JS garbage response
@@ -1899,12 +2043,15 @@ async function loadAllData() {
   setSyncStatus(usingDemo && cfg.sheetId ? 'warn' : 'ok');
   isLoading = false;
 
+  recomputeBalances();   // derive closing balances from opening + ledger
+
   setTimeout(() => {
     renderWarehouse();
     renderBorrowList();
     generateReport();
     renderAnalytics();
     populateBorrowSelect();
+    if (typeof renderStockOut === 'function') renderStockOut();
     if (currentTab === 'instruments') renderInstruments();
   }, 0);
 }
@@ -2060,6 +2207,7 @@ function initNavigation() {
       if (tab === 'analytics') renderAnalytics();
       if (tab === 'report') generateReport();
       if (tab === 'borrow') { populateBorrowSelect(); renderBorrowList(); }
+      if (tab === 'stockout') { renderStockOut(); onStockOutItemChange(); }
       if (tab === 'instruments') { updateOwnerFilter(); renderInstruments(); }
       if (tab === 'internaltest') initInternalTest();
       if (tab === 'datamanage') initDataManage();
@@ -2167,6 +2315,94 @@ function populateBorrowSelect() {
     active.map(b => `<option value="${b.id}">${b.id} — ${b.borrower} / ${b.itemName}</option>`).join('');
 }
 
+// ════════════ STOCK OUT (ledger) ════════════
+function populateStockOutSelect() {
+  const sel = document.getElementById('soItem');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- เลือกสินค้า --</option>' +
+    allStock.map(i =>
+      `<option value="${i.id}">${i.id} — ${i.name} (คงเหลือ: ${i.qty} ${i.unit||''})</option>`
+    ).join('');
+  if (prev) sel.value = prev;
+}
+
+function onStockOutItemChange() {
+  const id = document.getElementById('soItem').value;
+  const hint = document.getElementById('soBalanceHint');
+  const qtyEl = document.getElementById('soQty');
+  if (!id) { hint.textContent = ''; return; }
+  const bal = currentBalance(id);
+  const want = parseInt(qtyEl.value) || 0;
+  qtyEl.max = bal;
+  if (want > bal) {
+    hint.innerHTML = `<span style="color:var(--danger)">⚠ คงเหลือ ${bal} — เบิกได้ไม่เกินจำนวนนี้</span>`;
+  } else {
+    hint.innerHTML = `<span style="color:var(--text3)">คงเหลือปัจจุบัน: <b style="color:var(--text)">${bal}</b></span>`;
+  }
+}
+
+async function submitStockOut() {
+  if (!requireRole('admin','user')) return;
+  const id   = document.getElementById('soItem').value;
+  const qty  = parseInt(document.getElementById('soQty').value) || 0;
+  const reason = document.getElementById('soReason').value;
+  const ref  = document.getElementById('soRef').value.trim();
+  const note = document.getElementById('soNote').value.trim();
+
+  if (!id)        { showToast('กรุณาเลือกสินค้า', 'warn'); return; }
+  if (qty <= 0)   { showToast('จำนวนต้องมากกว่า 0', 'warn'); return; }
+
+  const item = allStock.find(i => i.id === id);
+  const bal  = currentBalance(id);
+  if (qty > bal) { showToast(`เบิกได้ไม่เกินคงเหลือ (${bal} ${item?.unit||''})`, 'error'); return; }
+
+  showToast('⏳ กำลังบันทึกการเบิกออก...', 'info');
+  const ok = await recordTxn({
+    type:'OUT', itemId:id, itemName:item?item.name:'', qty,
+    reason, reference:ref, note
+  });
+
+  renderWarehouse(); renderStockOut(); populateStockOutSelect(); populateBorrowSelect();
+  document.getElementById('soQty').value = '1';
+  document.getElementById('soRef').value = '';
+  document.getElementById('soNote').value = '';
+  onStockOutItemChange();
+
+  if (cfg.gasUrl && cfg.sheetId) {
+    showToast(ok ? `✅ เบิก "${item?item.name:id}" จำนวน ${qty} ออกจากคลังแล้ว` : `⚠️ เบิกออก (local) — Sheets: ตรวจสอบ URL`, ok ? 'success' : 'warn');
+  } else {
+    showToast(`✅ เบิก "${item?item.name:id}" จำนวน ${qty} (local only)`, 'success');
+  }
+}
+
+function renderStockOut() {
+  populateStockOutSelect();
+  const tbody = document.getElementById('soLedgerBody');
+  if (!tbody) return;
+  const filter = (document.getElementById('soLedgerFilter')||{}).value || 'all';
+  const rows = allTxns.filter(t => filter === 'all' || t.type === filter);
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">ยังไม่มีการเคลื่อนไหว</td></tr>';
+    return;
+  }
+  const typeBadge = (t) => {
+    if (t === 'OUT')    return '<span class="badge" style="background:rgba(248,81,73,0.15);color:var(--danger)">OUT</span>';
+    if (t === 'IN')     return '<span class="badge" style="background:rgba(63,185,80,0.15);color:var(--success)">IN</span>';
+    return '<span class="badge" style="background:rgba(0,153,255,0.15);color:var(--accent2)">ADJUST</span>';
+  };
+  tbody.innerHTML = rows.map(t => `<tr>
+    <td style="font-family:var(--mono);font-size:0.74rem;white-space:nowrap">${escapeHtml(t.timestamp||'')}</td>
+    <td>${typeBadge(t.type)}</td>
+    <td style="font-family:var(--mono);font-size:0.8rem;color:var(--accent2)">${escapeHtml(t.itemId||'')}</td>
+    <td>${escapeHtml(t.itemName||'')}</td>
+    <td style="font-family:var(--mono);font-weight:700;color:${t.type==='OUT'?'var(--danger)':'var(--success)'}">${t.type==='OUT'?'−':'+'}${escapeHtml(t.qty||'0')}</td>
+    <td style="font-family:var(--mono)">${escapeHtml(t.balanceAfter||'—')}</td>
+    <td style="font-size:0.82rem">${escapeHtml(t.reason||'')}${t.reference?'<br><span style="font-size:0.7rem;color:var(--text3)">'+escapeHtml(t.reference)+'</span>':''}</td>
+    <td style="font-size:0.82rem">${escapeHtml(t.user||'—')}</td>
+  </tr>`).join('');
+}
+
 function updateBorrowMax() {
   const sel = document.getElementById('borrowItem');
   const opt = sel.options[sel.selectedIndex];
@@ -2232,7 +2468,7 @@ async function submitBorrow() {
     showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warn'); return;
   }
   const stockItem = allStock.find(i => i.id === item);
-  if (!stockItem || parseInt(stockItem.qty) < qty) {
+  if (!stockItem || currentBalance(item) < qty) {
     showToast('จำนวนที่ยืมมากกว่าสต็อกที่มี', 'error'); return;
   }
 
@@ -2243,10 +2479,12 @@ async function submitBorrow() {
     borrowDate:date, dueDate:due, returnDate:'', status:'borrowed', purpose:purp,
     timestamp:ts, actionBy: currentUser?.name || '—' };
 
-  // Optimistic UI update
-  stockItem.qty = String(parseInt(stockItem.qty) - qty);
+  // Optimistic UI: log an OUT(borrow) transaction; balance is recomputed from the ledger
   allBorrow.unshift(record);
+  recordTxn({ type:'OUT', itemId:item, itemName:stockItem.name, qty,
+    reason:'ยืม (Borrow)', reference:newId, note:purp });
   renderWarehouse(); renderBorrowList(); populateBorrowSelect();
+  if (typeof renderStockOut === 'function') renderStockOut();
   ['borrowerName','borrowerDept','borrowQty','borrowPurpose'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('borrowItem').value = '';
   document.getElementById('qtyHint').textContent = '';
@@ -2274,12 +2512,14 @@ async function submitReturn() {
   rec.status = 'returned'; rec.returnDate = date; rec.returnNote = note;
   rec.returnTimestamp = fmtTimestamp(); rec.returnBy = currentUser?.name || '—';
 
-  // Return to stock
+  // Return to stock via ledger: log an IN(return) transaction
   const stockItem = allStock.find(i => i.id === rec.itemId);
-  if (stockItem) stockItem.qty = String(parseInt(stockItem.qty) + parseInt(rec.qty));
+  recordTxn({ type:'IN', itemId:rec.itemId, itemName:rec.itemName || (stockItem?stockItem.name:''),
+    qty:parseInt(rec.qty)||0, reason:'คืน (Return)', reference:id, note });
 
   // Optimistic UI
   renderWarehouse(); renderBorrowList(); populateBorrowSelect();
+  if (typeof renderStockOut === 'function') renderStockOut();
   document.getElementById('returnBorrowId').value = '';
   document.getElementById('returnInfo').style.display = 'none';
 
@@ -3393,7 +3633,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.10.3
+   AUTH / LOGIN SYSTEM  v1.11.0
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3564,7 +3804,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.10.3
+   INTERNAL TEST MODULE  v1.11.0
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -3627,7 +3867,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.10.3
+   MATERIAL MASTER DATA  v1.11.0
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -3987,38 +4227,28 @@ function saveToStockFromTest() {
   const canSaveToInventory = failedLabels.length === 0 && overallPass;
   if (canSaveToInventory) {
     const stockDef = moduleStockDef(itCurrentMod);
-    const existing = allStock.find(i => i.id === stockDef.id);
-    if (existing) {
-      existing.qty = String(parseInt(existing.qty||0) + 1);
-    } else {
-      allStock.push({ ...stockDef, qty:'1', minQty:'1', partNo:'—', location:'—', status:'ok' });
+    // Ensure the item exists in the master list (so the ledger has something to attach to)
+    let existing = allStock.find(i => i.id === stockDef.id);
+    if (!existing) {
+      existing = { ...stockDef, qty:'0', minQty:'1', partNo:'—', location:'—', status:'ok' };
+      allStock.push(existing);
+      openingQty[stockDef.id] = 0;   // brand-new item, opening balance 0
     }
     record.inStock = true;
     itTestHistory[0].inStock = true;
     localStorage.setItem('mps_test_history', JSON.stringify(itTestHistory.slice(0,100)));
-    renderWarehouse();
-    // Write to Google Sheets Stock sheet via GAS
-    const stockRef = existing || stockDef;
-    if (cfg.gasUrl && cfg.sheetId) {
-      const payload = {
-        action:    'updateStock',
-        sheetId:   cfg.sheetId,
-        stockSheet: cfg.stockSheet || 'Stock',
-        id:        stockRef.id,
-        name:      stockRef.name,
-        category:  stockRef.category || stockDef.category,
-        brand:     stockRef.brand || stockDef.brand,
-        unit:      stockRef.unit || stockDef.unit,
-        delta:     1,
-        serialNumber: Object.values(record.serialNumbers||{}).filter(Boolean).join(', '),
-      };
-      gasWrite('updateStock', payload).then(ok => {
-        if (ok) showToast(`✅ เพิ่ม "${stockDef.name}" เข้าคลังและบันทึกลง Sheets แล้ว`, 'success');
-        else    showToast(`✅ เพิ่มเข้าคลัง (local) — Sheets: ตรวจสอบ Apps Script URL`, 'warn');
+    // Log an IN(test pass) transaction — qty is derived from the ledger
+    const serials = Object.values(record.serialNumbers||{}).filter(Boolean).join(', ');
+    recordTxn({ type:'IN', itemId:stockDef.id, itemName:stockDef.name, qty:1,
+      reason:'ผ่านการทดสอบ (Test pass)', reference: record.id, note: serials })
+      .then(ok => {
+        if (cfg.gasUrl && cfg.sheetId) {
+          showToast(ok ? `✅ เพิ่ม "${stockDef.name}" เข้าคลัง (ledger) แล้ว` : `✅ เพิ่มเข้าคลัง (local) — Sheets: ตรวจสอบ URL`, ok ? 'success' : 'warn');
+        } else {
+          showToast(`✅ บันทึกประวัติและเพิ่ม "${stockDef.name}" เข้าคลังแล้ว (local only)`, 'success');
+        }
       });
-    } else {
-      showToast(`✅ บันทึกประวัติและเพิ่ม "${stockDef.name}" เข้าคลังแล้ว (local only)`, 'success');
-    }
+    renderWarehouse();
   } else if (failedLabels.length > 0) {
     // Blocked because of one or more Fail results
     const preview = failedLabels.slice(0, 4).join(', ') + (failedLabels.length > 4 ? ` …(+${failedLabels.length - 4})` : '');
@@ -4314,7 +4544,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.10.3
+   DATA MANAGEMENT MODULE  v1.11.0
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
