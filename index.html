@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.15.2</title>
+<title>MPS Stock Management System v1.15.4</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -932,7 +932,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.15.2</div>
+    <div class="login-footer">MPS Department · v1.15.4</div>
   </div>
 </div>
 
@@ -984,7 +984,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.15.2</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.15.4</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1705,7 +1705,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.15.2 — app.js
+   MPS Stock Management System v1.15.4 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1784,7 +1784,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.15.2
+   STOCK LEDGER ENGINE  v1.15.4
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -2072,7 +2072,7 @@ async function loadAllData() {
           date:        r.date || '',
           module:      '',
           moduleTitle: r.module || '',
-          // fc_sn column (written separately since v1.15.2) takes priority;
+          // fc_sn column (written separately since v1.15.4) takes priority;
           // fallback: serialNumbers is the full joined string — use it as-is for non-fc_full
           serialNumbers: {
             fc_sn: r.fc_sn || r['fc sn'] || '',
@@ -2973,6 +2973,19 @@ function drawTrendChart(canvasId, cat, color) {
 }
 
 
+
+// ── Safe tab opener — uses anchor+noopener to avoid shared renderer process
+// (prevents keyboard freeze after PDF export; see Pattern 1 in root-cause doc)
+function _openTab(url) {
+  var a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() { a.remove(); }, 0);
+}
+
 function exportStockPDF() {
   showToast('กำลังเตรียม Stock PDF...', 'info');
   const catLabel = { fc:'Flow Computer', gc:'Gas Chromatograph', acc:'Accessories' };
@@ -3044,12 +3057,7 @@ function exportStockPDF() {
 
   const blob = new Blob([html], { type:'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
-  const win  = window.open(url, '_blank');
-  if (!win) {
-    const a = document.createElement('a');
-    a.href = url; a.download = `MPS_Stock_${catTitle}_${new Date().toISOString().split('T')[0]}.html`; a.click();
-    showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info');
-  }
+  _openTab(url);
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
@@ -3106,8 +3114,7 @@ function exportBorrowPDF() {
     + '<script>window.onload=function(){window.print();}<\/script></body></html>';
   var blob = new Blob([html], { type:'text/html;charset=utf-8' });
   var url = URL.createObjectURL(blob);
-  var win = window.open(url, '_blank');
-  if (!win) { var a = document.createElement('a'); a.href = url; a.download = 'MPS_Borrow_' + new Date().toISOString().split('T')[0] + '.html'; a.click(); showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info'); }
+  _openTab(url);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
 }
 
@@ -3150,8 +3157,7 @@ function exportLedgerPDF() {
     + '<script>window.onload=function(){window.print()}<\/script></body></html>';
   var blob = new Blob([html], { type:'text/html;charset=utf-8' });
   var url = URL.createObjectURL(blob);
-  var win = window.open(url, '_blank');
-  if (!win) { var a = document.createElement('a'); a.href = url; a.download = 'MPS_Ledger_' + new Date().toISOString().split('T')[0] + '.html'; a.click(); showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info'); }
+  _openTab(url);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
 }
 
@@ -3252,11 +3258,10 @@ function exportReport() {
   <script>window.onload = function(){ window.print(); }<\/script>
 </body></html>`;
 
-  setTimeout(() => {
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (win) { win.document.write(html); win.document.close(); }
-    else showToast('กรุณาอนุญาต popup เพื่อ export PDF', 'warn');
-  }, 300);
+  var _blob5 = new Blob([html], { type:'text/html;charset=utf-8' });
+  var _url5  = URL.createObjectURL(_blob5);
+  _openTab(_url5);
+  setTimeout(function(){ URL.revokeObjectURL(_url5); }, 60000);
 }
 
 // ──────────── DATETIME ────────────
@@ -3646,11 +3651,10 @@ function exportInstrumentsPDF() {
   <script>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
-  setTimeout(() => {
-    const win = window.open('', '_blank', 'width=1100,height=750');
-    if (win) { win.document.write(html); win.document.close(); }
-    else showToast('กรุณาอนุญาต popup เพื่อ export PDF', 'warn');
-  }, 300);
+  var _blob6 = new Blob([html], { type:'text/html;charset=utf-8' });
+  var _url6  = URL.createObjectURL(_blob6);
+  _openTab(_url6);
+  setTimeout(function(){ URL.revokeObjectURL(_url6); }, 60000);
 }
 
 // updateHeader now handles instruments tab directly
@@ -3756,11 +3760,10 @@ function exportAnalyticsPDF() {
   <script>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
-  setTimeout(() => {
-    const win = window.open('', '_blank', 'width=1200,height=800');
-    if (win) { win.document.write(html); win.document.close(); }
-    else showToast('กรุณาอนุญาต popup เพื่อ export PDF', 'warn');
-  }, 200);
+  var _blob7 = new Blob([html], { type:'text/html;charset=utf-8' });
+  var _url7  = URL.createObjectURL(_blob7);
+  _openTab(_url7);
+  setTimeout(function(){ URL.revokeObjectURL(_url7); }, 60000);
 }
 
 // Init instruments tab on navigation
@@ -3806,7 +3809,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.15.2
+   AUTH / LOGIN SYSTEM  v1.15.4
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -3977,7 +3980,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.15.2
+   INTERNAL TEST MODULE  v1.15.4
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -4041,7 +4044,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.15.2
+   MATERIAL MASTER DATA  v1.15.4
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4438,6 +4441,15 @@ function saveToStockFromTest() {
       .then(ok => {
         if (cfg.gasUrl && cfg.sheetId) {
           showToast(ok ? `✅ เพิ่ม "${stockDef.name}" เข้าคลัง (ledger) แล้ว` : `✅ เพิ่มเข้าคลัง (local) — Sheets: ตรวจสอบ URL`, ok ? 'success' : 'warn');
+          // ── Update inStock flag in TestHistory sheet ──────────────────────
+          // This ensures the สถานะคลัง column is persisted so reloads from
+          // Sheets show "เข้าคลังแล้ว" instead of "ยังไม่เพิ่ม"
+          gasWrite('updateTestHistory', {
+            sheetId: cfg.sheetId,
+            testHistSheet: cfg.testHistSheet || 'TestHistory',
+            testId: record.id,
+            inStock: 'true'
+          });
         } else {
           showToast(`✅ บันทึกประวัติและเพิ่ม "${stockDef.name}" เข้าคลังแล้ว (local only)`, 'success');
         }
@@ -4750,19 +4762,14 @@ function toggleWitnessDate(val) {
 
   var blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
   var url  = URL.createObjectURL(blob);
-  var win  = window.open(url, '_blank');
-  if (!win) {
-    var a = document.createElement('a');
-    a.href = url; a.download = 'Checklist_' + itCurrentMod + '.html'; a.click();
-    showToast('เปิด popup ไม่ได้ — ดาวน์โหลดไฟล์ HTML แทน', 'info');
-  }
+  _openTab(url);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
 }
 </script>
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.15.2
+   DATA MANAGEMENT MODULE  v1.15.4
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
