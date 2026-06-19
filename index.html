@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.16.0</title>
+<title>MPS Stock Management System v1.16.1</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -991,7 +991,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.16.0</div>
+    <div class="login-footer">MPS Department · v1.16.1</div>
   </div>
 </div>
 
@@ -1044,7 +1044,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.16.0</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.16.1</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1796,7 +1796,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.16.0 — app.js
+   MPS Stock Management System v1.16.1 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1875,7 +1875,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.16.0
+   STOCK LEDGER ENGINE  v1.16.1
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -2163,7 +2163,7 @@ async function loadAllData() {
           date:        r.date || '',
           module:      '',
           moduleTitle: r.module || '',
-          // fc_sn column (written separately since v1.16.0) takes priority;
+          // fc_sn column (written separately since v1.16.1) takes priority;
           // fallback: serialNumbers is the full joined string — use it as-is for non-fc_full
           serialNumbers: {
             fc_sn: r.fc_sn || r['fc sn'] || '',
@@ -4014,7 +4014,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.16.0
+   AUTH / LOGIN SYSTEM  v1.16.1
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -4185,7 +4185,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.16.0
+   INTERNAL TEST MODULE  v1.16.1
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -4249,7 +4249,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.16.0
+   MATERIAL MASTER DATA  v1.16.1
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4974,7 +4974,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.16.0
+   DATA MANAGEMENT MODULE  v1.16.1
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
@@ -5120,7 +5120,16 @@ function dmAutoFillFromId(val) {
   if (!id) return;
   // Try MATERIAL_MASTER first, then MATERIAL_SEED fallback
   const m = MATERIAL_MASTER[id] || MATERIAL_SEED[id];
-  if (m) dmApplyMaterial(m, id);
+  if (m) {
+    dmApplyMaterial(m, id);
+    // Show valid indicator on ID field
+    const idEl = document.getElementById('dm_id');
+    if (idEl) { idEl.style.borderColor = 'var(--success)'; idEl.style.background = 'rgba(63,185,80,0.06)'; setTimeout(function(){ idEl.style.borderColor = ''; idEl.style.background = ''; }, 2000); }
+  } else if (id.length >= 3) {
+    // Show warning: ID not in Material Master
+    const idEl = document.getElementById('dm_id');
+    if (idEl) { idEl.style.borderColor = 'var(--danger)'; idEl.style.background = 'rgba(248,81,73,0.06)'; }
+  }
 }
 
 function dmAutoFillFromName(val) {
@@ -5285,6 +5294,14 @@ async function saveDMModal() {
 
     if (mode === 'add') {
       if (allStock.find(i => i.id === id)) { showToast('รหัสสินค้านี้มีอยู่แล้ว', 'error'); return; }
+      // ── Validate: ID must exist in Material Master ──
+      const mmId = id.toUpperCase();
+      if (!MATERIAL_MASTER[mmId] && !MATERIAL_SEED[mmId]) {
+        showToast('❌ รหัส "' + id + '" ไม่มีใน Material Master — กรุณาเพิ่มใน Material Master ก่อน', 'error');
+        const idEl = document.getElementById('dm_id');
+        if (idEl) { idEl.style.borderColor = 'var(--danger)'; idEl.style.background = 'rgba(248,81,73,0.08)'; setTimeout(function(){ idEl.style.borderColor = ''; idEl.style.background = ''; }, 3000); }
+        return;
+      }
       record.createdAt = fmtTimestamp();
       record.createdBy = currentUser?.name || '—';
       allStock.push(record);
