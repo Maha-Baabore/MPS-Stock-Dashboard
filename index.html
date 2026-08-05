@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MPS Stock Management System v1.16.10</title>
+<title>MPS Stock Management System v1.16.11</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -991,7 +991,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       <div class="login-error" id="loginError"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
     </div>
-    <div class="login-footer">MPS Department · v1.16.10</div>
+    <div class="login-footer">MPS Department · v1.16.11</div>
   </div>
 </div>
 
@@ -1044,7 +1044,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
       </button>
     </nav>
 
-    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.16.10</span></div>
+    <div class="version-badge"><span class="ver-dot"></span><span class="ver-num">v1.16.11</span></div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-left">
         <button class="sync-btn-sidebar" id="syncBtnSidebar" onclick="manualRefresh()" title="รีเฟรชข้อมูล">
@@ -1796,7 +1796,7 @@ body.user-mode #clearTestHistoryBtn { display: none !important; }
 
 <script>
 /* ============================================================
-   MPS Stock Management System v1.16.10 — app.js
+   MPS Stock Management System v1.16.11 — app.js
    Google Sheets (CSV export) → Dashboard
    Security: XSS escaped, 3-level role guards (admin/user/viewer), session expiry
    ============================================================ */
@@ -1875,7 +1875,7 @@ let currentTab = 'warehouse';
 let isLoading  = false;
 
 /* ═══════════════════════════════════════════════════════════
-   STOCK LEDGER ENGINE  v1.16.10
+   STOCK LEDGER ENGINE  v1.16.11
    Quantity is DERIVED, not stored:
      closing balance = opening balance (Stock sheet qty)
                        + Σ(IN transactions) − Σ(OUT transactions)
@@ -4014,7 +4014,7 @@ function initTheme() {
 
 
 /* ============================================================
-   AUTH / LOGIN SYSTEM  v1.16.10
+   AUTH / LOGIN SYSTEM  v1.16.11
    Users stored in Google Sheets → sheet "Users"
    Columns: username | password | role | name | active
    ─────────────────────────────────────────────
@@ -4185,7 +4185,7 @@ function showLoginError(msg) {
 
 <script>
 /* ============================================================
-   INTERNAL TEST MODULE  v1.16.10
+   INTERNAL TEST MODULE  v1.16.11
    FloBoss S600+ Checklist — Pass/Fail per item + PDF export
    Access: Admin, User
    ============================================================ */
@@ -4249,7 +4249,7 @@ const IT_MODULES = {
 };
 
 /* ═══════════════════════════════════════════════
-   MATERIAL MASTER DATA  v1.16.10
+   MATERIAL MASTER DATA  v1.16.11
    Single source of truth: code → description mapping
    (SAP-style: same product = same ID, one canonical name)
 
@@ -4917,7 +4917,7 @@ function toggleWitnessDate(val) {
     '* { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }',
     'body { font-family:Sarabun,Arial,sans-serif; padding:16px 24px; color:#1e293b; font-size:11px; }',
     '.page-wrap { display:block; }',
-    '.main-content { min-height:191mm; }',
+    '.main-content { min-height:160mm; }',
     '.bottom-section { margin-top:0; padding-top:10px; }',
     '.page-header { display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; margin-bottom:10px; border-bottom:2.5px solid #1e3a5f; }',
     '.header-left { display:flex; align-items:center; gap:10px; }',
@@ -4974,7 +4974,7 @@ function toggleWitnessDate(val) {
 
 <script>
 /* ============================================================
-   DATA MANAGEMENT MODULE  v1.16.10
+   DATA MANAGEMENT MODULE  v1.16.11
    READ-ONLY viewer for Stock + Instruments + Material Master.
    Single source of truth = Google Sheets. All add/edit/delete
    is performed directly in the sheets, not in the dashboard.
